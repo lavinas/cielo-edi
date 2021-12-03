@@ -1,5 +1,5 @@
 package ports
 
 type StringParser interface {
-	Marshal(interface{}, string)
+	Parse(interface{}, string) error
 }

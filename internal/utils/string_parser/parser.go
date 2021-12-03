@@ -1,4 +1,4 @@
-package utils
+package string_parser
 
 import (
 	"fmt"
@@ -161,7 +161,8 @@ func verifyValidInterface(source interface{}) error {
 	if source == nil {
 		return fmt.Errorf("source interface should be a valid struct")
 	}
-	if reflect.ValueOf(source).Kind() != reflect.Struct {
+	x := reflect.TypeOf(source).Elem().Kind()
+	if x != reflect.Struct {
 		return fmt.Errorf("source interface should be a valid struct")
 	} 
 	return nil
@@ -175,7 +176,7 @@ func verifyValidInterface(source interface{}) error {
 // txtPos has the position of the string to start to parse
 //
 // returns the next string field position based on the start position and the field length and a possible error
-func UnmarshalField(source interface{}, fieldName string, txt string, txtPos int) (int, error) {
+func ParseField(source interface{}, fieldName string, txt string, txtPos int) (int, error) {
 	// verify source
 	if err := verifyValidInterface(source); err != nil {
 		return txtPos, err
@@ -224,7 +225,7 @@ func UnmarshalField(source interface{}, fieldName string, txt string, txtPos int
 // txt has the string to be parsed based on the parameters of this field
 //
 // returns a error if there is one, otherwise fills source structure with the txt sequenced values
-func UnMarshal(source interface{}, txt string) error {
+func Parse(source interface{}, txt string) error {
 	// verify source
 	if err := verifyValidInterface(source); err != nil {
 		return err
@@ -235,7 +236,7 @@ func UnMarshal(source interface{}, txt string) error {
 	fields := reflect.ValueOf(source).Elem()
 	for i := 0; i < fields.NumField(); i++ {
 		fieldName := fields.Type().Field(i).Name
-		strPosition, err = UnmarshalField(source, fieldName, txt, strPosition)
+		strPosition, err = ParseField(source, fieldName, txt, strPosition)
 		if err != nil {
 			err = errors.Wrap(err, fieldName)
 			return err
