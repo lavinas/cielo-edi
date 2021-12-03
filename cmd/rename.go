@@ -74,7 +74,7 @@ func ReadFile(path string, filename string) (*bufio.Scanner, error) {
 	return scanner, nil
 }
 
-func main2() {
+func Main2() {
 	log.Println("Starting")
 	files, err := GetFiles(pathFrom)
 	if err != nil {
@@ -99,4 +99,14 @@ func main2() {
 		}
 	}
 	log.Println("End")
+}
+
+func main() {
+	var x = map[string]string{"1": "1"}
+	y := x["2"]
+	if y == "" {
+		fmt.Println("Zero")
+	}
+	fmt.Println(y)
+
 }

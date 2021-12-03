@@ -4,154 +4,240 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	tag_name      = "parse_txt"
-	tag_delimiter = ','
+	// tag_name identifies a struct tag that contains parameters for parsing text
+	tag_name      = "txt"
 )
 
-func splitTag(tag string) (string, string, error) {
-	if tag == "" {
-		return "", "", fmt.Errorf("tag is empty")
+var (
+	// time_replacer maps formats thar can be identified on tags for formating Time fields 
+	time_replacer = map[string]string{
+		"yyyymmdd":   "20060102",
+		"yyyy-mm-dd": "2006-01-02",
+		"yymmdd":     "060102",
+		"yy-mm-dd":   "06-01-02",
 	}
-	val := strings.Split(tag, ",")
-	if len(val) != 2 {
-		return "", "", fmt.Errorf("invalid annotation")
+	// time_type maps struct fields that this program can support for parsing txt
+	// others types should be implemented here 
+	field_type = map[string]string{
+		"int":    "d",
+		"int8":   "d",
+		"int16":  "d",
+		"int32":  "d",
+		"int64":  "d",
+		"string": "s",
+		"Time":   "t",
 	}
-	return val[0], val[1], nil
-}
+)
 
-func getField(fType string, format string, line string, linePos int) (string, int, error) {
-	var fLen int
+// getValue parse string and returns substring and its length based on field parameters (Index(type) and tag) 
+//
+// fieldIndex describes field type (D - decimal/integer, S - string, T - Time)
+// tagValue has the tag value of struct field
+// txt has a string that is parsed
+// txtPos has the position of txt to start to parse
+//
+// returns a substring parsed, the len of this string and a possible error
+func getValue(fieldIndex string, tagValue string, txt string, txtPos int) (string, int, error) {
+	var fieldLen int
 	var err error
-	if fType == "t" {
-		fLen = len(format)
+	if fieldIndex == "t" {
+		fieldLen = len(tagValue)
 	} else {
-		fLen, err = strconv.Atoi(format)
+		fieldLen, err = strconv.Atoi(tagValue)
 		if err != nil {
-			return "", linePos, fmt.Errorf("invalid tag format")
+			return "", txtPos, fmt.Errorf("invalid tag value (should be numeric)")
 		}
 	}
-	if linePos + fLen > len(line) {
-		return "", linePos, fmt.Errorf("line is shorter than field length")
+	if txtPos+fieldLen > len(txt) {
+		return "", txtPos, fmt.Errorf("unexpected end of txt for parsing this field")
 	}
-	return line[linePos: linePos+fLen], fLen, nil
+	return txt[txtPos : txtPos+fieldLen], fieldLen, nil
 }
 
-func getDecimal(fType string, value string) (int64, error) {
+// getDecimal parse string and returns a integer value and its length based on field parameters (Index(type) and tag)
+//
+// fieldIndex describes field type (D - decimal/integer, S - string, T - Time)
+// tagValue has the tag value of struct field
+// txt has a string that is parsed
+// txtPos has the position of txt to start to parse
+//
+// returns a substring parsed transformed in a integer (8, 16, 32 or 64), the len of this string and a possible error
+func getDecimal(fieldType string, fieldIndex string, tagValue string, txt string, txtPos int) (int64, int, error) {
 	var dimN int = 32
 	var err error
-	if len(fType) < 3 || fType[:3] != "int" {
-		return 0, fmt.Errorf("invalid field type (should be int, int8, int16, int32, int64)")
+	value, txtPos, err := getValue(fieldIndex, tagValue, txt, txtPos)
+	if err != nil {
+		return 0, 0, err
 	}
-	dim := fType[3:]
+	dim := fieldType[3:]
 	if dim != "" {
-		dimN, err = strconv.Atoi(dim)
-		if err != nil {
-			return 0, fmt.Errorf("invalid field type (should be int, int8, int16, int32, int64)")
-		}
-	}
-	if !(dimN == 8 || dimN == 16 || dimN == 32 || dimN == 64) {
-		return 0, fmt.Errorf("invalid field type (should be int, int8, int16, int32, int64)")
+		dimN, _ = strconv.Atoi(dim)
 	}
 	dec, err := strconv.ParseInt(value, 10, dimN)
 	if err != nil {
-		return 0, fmt.Errorf("parsing integer error")
+		return 0, 0, fmt.Errorf("parsing integer error")
 	}
-	return dec, nil
+	return dec, txtPos, nil
 }
 
-func getString(fType, value string) (string, error) {
-	if fType != "string" {
-		return "", fmt.Errorf("invalid field type (should be string)")
-	}
-	return value, nil
-}
-
-func getTime(fType, format, value string)(time.Time, error) {
-	if fType != "Time" {
-		return time.Time{}, fmt.Errorf("invalid field type (should be Time)")
-	}
-	t, err :=time.Parse(format, value)
+// getStrings parse string and returns a string value and its length based on field parameters (Index(type) and tag)
+//
+// fieldIndex describes field type (D - decimal/integer, S - string, T - Time)
+// tagValue has the tag value of struct field
+// txt has a string that is parsed
+// txtPos has the position of txt to start to parse
+//
+// returns a substring parsed, the len of this string and a possible error
+func getString(fieldIndex string, tagValue string, txt string, txtPos int) (string, int, error) {
+	value, txtPos, err := getValue(fieldIndex, tagValue, txt, txtPos)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid date format (should by yyyymmdd, yymmdd, etc")
+		return "", 0, err
 	}
-	return t, nil
+	return value, txtPos, nil
 }
 
-func UnmarshalField(source interface{}, fName string, line string, linePos int) (int, error) {
+// getStrings parse string and returns a Time value and its length based on field parameters (Index(type) and tag)
+//
+// fieldIndex describes field type (D - decimal/integer, S - string, T - Time)
+// tagValue has the tag value of struct field
+// txt has a string that is parsed
+// txtPos has the position of txt to start to parse
+//
+// returns a substring parsed transformed in a Time variable, the len of this string and a possible error
+func getTime(fieldIndex string, tagValue string, txt string, txtPos int) (time.Time, int, error) {
+	value, txtPos, err := getValue(fieldIndex, tagValue, txt, txtPos)
+	if err != nil {
+		return time.Time{}, 0, err
+	}
+	rFormat := time_replacer[tagValue]
+	if rFormat == "" {
+		return time.Time{}, 0, fmt.Errorf("invalid datetime tag value (should be for ex yyyymmdd)")
+	}
+	t, err := time.Parse(rFormat, value)
+	if err != nil {
+		return time.Time{}, 0, fmt.Errorf(fmt.Sprintf("%v", err))
+	}
+	return t, txtPos, nil
+}
+
+// getFieldByName try to find a structure field parameters (type, index)
+//
+// source has a structure that possible have the field
+// fieldName has the name of field to be found
+//
+// returns the name of field, a field type/index (D - decimal/integer, S - string, t _time), the tag of the field and a possible error
+func getFieldByName(source interface{}, fieldName string) (string, string, string, error) {
 	// find fields
-	if !reflect.ValueOf(source).Elem().FieldByName(fName).CanSet() {
-		return linePos, fmt.Errorf("invalid field name")
+	if !reflect.ValueOf(source).Elem().FieldByName(fieldName).CanSet() {
+		return "", "", "", fmt.Errorf("invalid field name")
 	}
-	field, _ := reflect.ValueOf(source).Elem().Type().FieldByName(fName)
-	fType := field.Type.Name()
+	field, _ := reflect.ValueOf(source).Elem().Type().FieldByName(fieldName)
+	typeName := field.Type.Name()
+	typeIndex := field_type[typeName]
+	if typeIndex == "" {
+		return "", "", "", fmt.Errorf("not supported field type")
+	}
 	tag := field.Tag.Get(tag_name)
-	// format tag
-	tagType, tagFormat, err := splitTag(tag)
-	if err != nil {
-		return linePos, fmt.Errorf("invalid tag structure (should have <type, format>): field %s", fName)
+	if tag == "" {
+		return "", "", "", fmt.Errorf("tag is not presented")
 	}
-	if !(tagType == "d" || tagType == "s" || tagType == "t") {
-		return linePos, fmt.Errorf("invalid tag type")
+
+	return typeName, typeIndex, tag, nil
+}
+
+
+// verifyValidInterface ckecks if a interface is a structure
+//
+// source has a interface that should be a structure
+// 
+// returns a error if is is not a structure
+func verifyValidInterface(source interface{}) error {
+	if source == nil {
+		return fmt.Errorf("source interface should be a valid struct")
+	}
+	if reflect.ValueOf(source).Kind() != reflect.Struct {
+		return fmt.Errorf("source interface should be a valid struct")
 	} 
+	return nil
+}
+
+// UnmarshalField try to find a structure field and parse the value of a string based on the parameters of this field
+//
+// source has a structure that possible have the field
+// fieldName has the name of field to be found
+// txt has the string to be parsed based on the parameters of this field
+// txtPos has the position of the string to start to parse
+//
+// returns the next string field position based on the start position and the field length and a possible error
+func UnmarshalField(source interface{}, fieldName string, txt string, txtPos int) (int, error) {
+	// verify source
+	if err := verifyValidInterface(source); err != nil {
+		return txtPos, err
+	}
+	// find fields
+	fieldType, fieldIndex, fieldTag, err := getFieldByName(source, fieldName)
+	if err != nil {
+		return txtPos, err
+	}
 	// set values
-	var fValue string
-	var fLen int 
-	switch tagType {
+	var fieldLen int
+	switch fieldIndex {
 	case "d":
-		fValue, fLen, err = getField(tagType, tagFormat, line, linePos)
+		var dval int64
+		dval, fieldLen, err = getDecimal(fieldType, fieldIndex, fieldTag, txt, txtPos)
 		if err != nil {
-			return linePos, err
+			return txtPos, err
 		}
-		dval, err := getDecimal(fType, fValue)
-		if err != nil {
-			return linePos, err
-		}
-		reflect.ValueOf(source).Elem().FieldByName(fName).SetInt(dval)
+		reflect.ValueOf(source).Elem().FieldByName(fieldName).SetInt(dval)
 	case "s":
-		fValue, fLen, err = getField(tagType, tagFormat, line, linePos)
+		var sVal string
+		sVal, fieldLen, err = getString(fieldIndex, fieldTag, txt, txtPos)
 		if err != nil {
-			return linePos, err
+			return txtPos, err
 		}
-		sVal, err := getString(fType, fValue)
-		if err != nil {
-			return linePos, err
-		}
-		reflect.ValueOf(source).Elem().FieldByName(fName).SetString(sVal)
+		reflect.ValueOf(source).Elem().FieldByName(fieldName).SetString(sVal)
 	case "t":
 		var tVal time.Time
-		fValue, fLen, err = getField(tagType, tagFormat, line, linePos)
+		tVal, fieldLen, err = getTime(fieldIndex, fieldTag, txt, txtPos)
 		if err != nil {
-			return linePos, err
+			return txtPos, err
 		}
-		tVal, err = getTime(fType, tagFormat, fValue)
-		if err != nil {
-			return linePos, err
-		}
-		reflect.ValueOf(source).Elem().FieldByName(fName).Set(tVal)
+		reflect.ValueOf(source).Elem().FieldByName(fieldName).Set(reflect.ValueOf(tVal))
 
 	default:
-		return linePos, fmt.Errorf("invalid tag type")
+		return txtPos, fmt.Errorf("invalid tag type")
 	}
-	return linePos + fLen, nil
+	return txtPos + fieldLen, nil
 }
 
-func UnMarshal(source interface{}, line string) error {
+// Unmarshal try to find all structure fields values on a sequenced string based on this parameters (types and tags)
+// the possibles tags values are: a numeric value that represents the substring length if the field is integer or string or
+// a date format (ex yyyymmdd) if the field is a Time
+//
+// source has a structure that possible have the field
+// txt has the string to be parsed based on the parameters of this field
+//
+// returns a error if there is one, otherwise fills source structure with the txt sequenced values
+func UnMarshal(source interface{}, txt string) error {
+	// verify source
+	if err := verifyValidInterface(source); err != nil {
+		return err
+	}
+	// unmarshall all fields
 	var strPosition int = 0
 	var err error
-
 	fields := reflect.ValueOf(source).Elem()
 	for i := 0; i < fields.NumField(); i++ {
-		fieldName := fields.Type().Field(i).Type.Name()
-		strPosition, err = UnmarshalField(source, fieldName, line, strPosition)
+		fieldName := fields.Type().Field(i).Name
+		strPosition, err = UnmarshalField(source, fieldName, txt, strPosition)
 		if err != nil {
-			err = errors.Wrap(err, fmt.Sprintf("field: %s", fieldName))
+			err = errors.Wrap(err, fieldName)
 			return err
 		}
 	}
