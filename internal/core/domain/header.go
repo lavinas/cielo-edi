@@ -4,7 +4,6 @@ import (
 	"github.com/lavinas/cielo-edi/internal/core/ports"
 )
 
-
 type Header struct {
 	data   ports.HeaderDataInterface
 	parser ports.StringParserInterface
@@ -30,4 +29,3 @@ func (h Header) GetData() ports.HeaderDataInterface {
 func (h Header) IsLoaded() bool {
 	return h.data.GetAcquirer() == "CIELO"
 }
-

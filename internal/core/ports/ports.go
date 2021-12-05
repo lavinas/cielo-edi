@@ -1,8 +1,8 @@
 package ports
 
 import (
-	"time"
 	"io/fs"
+	"time"
 )
 
 type StringParserInterface interface {
@@ -13,13 +13,12 @@ type FileManagerInterface interface {
 	GetFiles(string) ([]fs.FileInfo, error)
 	GetFirstLine(string, fs.FileInfo) (string, error)
 	RenameFile(string, string, string) error
-	
 }
 
 type HeaderInterface interface {
 	Parse(string) error
 	IsLoaded() bool
-	GetData() HeaderDataInterface	
+	GetData() HeaderDataInterface
 }
 
 type HeaderDataInterface interface {
@@ -32,5 +31,5 @@ type HeaderDataInterface interface {
 	GetLayoutVersion() int8
 	GetAcquirer() string
 	IsReprocessed() bool
-	GetPeriodDates() ([]time.Time, error) 
+	GetPeriodDates() ([]time.Time, error)
 }

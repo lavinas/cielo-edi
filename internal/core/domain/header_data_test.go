@@ -7,10 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestGetGapsOk(t *testing.T) {
 	init, _ := time.Parse("2006-01-02", "2021-01-01")
-	end,  _ := time.Parse("2006-01-02", "2021-01-10")
+	end, _ := time.Parse("2006-01-02", "2021-01-10")
 	d := HeaderData{PeriodInit: init, PeriodEnd: end}
 	dates, err := d.GetPeriodDates()
 	assert.Nil(t, err)
@@ -35,7 +34,7 @@ func TestGetGapsEmptyPeriod(t *testing.T) {
 
 func TestGetGapsWrongPeriod(t *testing.T) {
 	init, _ := time.Parse("2006-01-02", "2021-01-10")
-	end,  _ := time.Parse("2006-01-02", "2021-01-01")
+	end, _ := time.Parse("2006-01-02", "2021-01-01")
 	d := HeaderData{PeriodInit: init, PeriodEnd: end}
 	dates, err := d.GetPeriodDates()
 	assert.NotNil(t, err)

@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	header     Header =  *NewHeader(string_parser.StringParser{})
+	header     Header = *NewHeader(string_parser.StringParser{})
 	headerline string = "910238632322021063020210630202106300008358CIELO04I                    014                                                                                                                                                                                 "
 )
 

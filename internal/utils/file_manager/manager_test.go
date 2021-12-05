@@ -2,10 +2,10 @@ package file_manager
 
 import (
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
-	"io/ioutil"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	listName = []string{"file1.txt", "file2.txt"} 
+	listName = []string{"file1.txt", "file2.txt"}
 )
 
 func TestMain(m *testing.M) {
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	err = os.RemoveAll(path)
 	if err != nil {
 		panic(err)
-	}	
+	}
 	os.Exit(ec)
 }
 

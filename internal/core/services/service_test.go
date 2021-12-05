@@ -2,10 +2,10 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"testing"
 	"time"
-	"fmt"
 
 	"github.com/lavinas/cielo-edi/internal/core/ports"
 	"github.com/stretchr/testify/assert"
@@ -13,14 +13,15 @@ import (
 
 var (
 	files = []string{"file1.txt", "file2.txt"}
-	path = "./tmp"
+	path  = "./tmp"
 )
 
 // Mock of FileInfo
-type FileInfoMock struct{
-	name string
+type FileInfoMock struct {
+	name  string
 	isDir bool
 }
+
 func NewFileInfoMock(name string, isDir bool) fs.FileInfo {
 	return &FileInfoMock{name: name, isDir: isDir}
 }
@@ -47,10 +48,11 @@ func (i FileInfoMock) Sys() interface{} {
 type FileManagerMock struct {
 	files []fs.FileInfo
 }
+
 func NewFileManagerMock(files []fs.FileInfo) ports.FileManagerInterface {
 	return &FileManagerMock{files: files}
 }
-func (f FileManagerMock) GetFiles(string) ([]fs.FileInfo, error){
+func (f FileManagerMock) GetFiles(string) ([]fs.FileInfo, error) {
 	return f.files, nil
 }
 func (f FileManagerMock) GetFirstLine(str string, info fs.FileInfo) (string, error) {
@@ -62,19 +64,20 @@ func (f FileManagerMock) RenameFile(string, string, string) error {
 
 // Header Data Mock
 type HeaderDataMock struct {
-	headquarter int64
+	headquarter    int64
 	processingDate time.Time
-	periodInit time.Time
-	periodEnd time.Time
-	sequence int
-	statementId int8
-	layoutVersion int8
-	isReprocessed bool
+	periodInit     time.Time
+	periodEnd      time.Time
+	sequence       int
+	statementId    int8
+	layoutVersion  int8
+	isReprocessed  bool
 }
+
 func NewHeaderDataMock(hq int64, pd time.Time, pi time.Time, pe time.Time, sq int, st int8, lv int8, ip bool) ports.HeaderDataInterface {
-	return &HeaderDataMock{headquarter: hq, processingDate: pd, periodInit: pi, periodEnd: pe, sequence: sq, 
+	return &HeaderDataMock{headquarter: hq, processingDate: pd, periodInit: pi, periodEnd: pe, sequence: sq,
 		statementId: st, layoutVersion: lv, isReprocessed: ip}
-} 
+}
 func (d *HeaderDataMock) GetHeadquarter() int64 {
 	return d.headquarter
 }
@@ -104,14 +107,14 @@ func (d *HeaderDataMock) GetAcquirer() string {
 }
 func (d HeaderDataMock) GetPeriodDates() ([]time.Time, error) {
 	times := make([]time.Time, 0)
-	if d.periodInit.Equal(time.Time{}) || d.periodEnd.Equal(time.Time{}){
+	if d.periodInit.Equal(time.Time{}) || d.periodEnd.Equal(time.Time{}) {
 		return times, fmt.Errorf("period is empty")
-	} 
+	}
 	if d.periodInit.After(d.periodEnd) {
 		return times, fmt.Errorf("initial period after final period")
 	}
 	for t := d.periodInit; !t.After(d.periodEnd); t = t.Add(24 * time.Hour) {
-		times = append(times, t)		
+		times = append(times, t)
 	}
 	return times, nil
 }
@@ -119,8 +122,9 @@ func (d HeaderDataMock) GetPeriodDates() ([]time.Time, error) {
 // Header mock
 type HeaderMock struct {
 	headerData ports.HeaderDataInterface
-	loaded bool
+	loaded     bool
 }
+
 func NewHeaderMock(hd ports.HeaderDataInterface, lo bool) ports.HeaderInterface {
 	return &HeaderMock{headerData: hd, loaded: lo}
 }
@@ -134,8 +138,8 @@ func (h HeaderMock) IsLoaded() bool {
 	return h.loaded
 }
 func (h HeaderMock) GetData() ports.HeaderDataInterface {
-	return h.headerData 
-}	
+	return h.headerData
+}
 
 func TestGetFilesOk(t *testing.T) {
 	// Load FileManager
@@ -172,7 +176,7 @@ func TestFormatNames(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestGetPeriodMap (t *testing.T) {
+func TestGetPeriodMap(t *testing.T) {
 	// Load FileManager
 	fi := make([]fs.FileInfo, 0)
 	fi = append(fi, NewFileInfoMock(files[0], false))
@@ -196,9 +200,9 @@ func TestGetPeriodMap (t *testing.T) {
 	assert.NotContains(t, dm, nDate)
 	nDate, _ = time.Parse(printDateFormat, "2020_02_01")
 	assert.NotContains(t, dm, nDate)
-} 
+}
 
-func TestGetPeriodGap (t *testing.T) {
+func TestGetPeriodGap(t *testing.T) {
 	// Load FileManager
 	fi := make([]fs.FileInfo, 0)
 	fi = append(fi, NewFileInfoMock(files[0], false))
@@ -229,7 +233,7 @@ func TestGetPeriodGap (t *testing.T) {
 	assert.NotContains(t, dates, nDate)
 }
 
-func TestGetPeriod (t *testing.T) {
+func TestGetPeriod(t *testing.T) {
 	// Load FileManager
 	fi := make([]fs.FileInfo, 0)
 	fi = append(fi, NewFileInfoMock(files[0], false))
@@ -247,5 +251,3 @@ func TestGetPeriod (t *testing.T) {
 	assert.Contains(t, dates, initDate)
 	assert.Contains(t, dates, endDate)
 }
-
-

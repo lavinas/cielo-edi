@@ -10,15 +10,15 @@ func TestRename(t *testing.T) {
 	path := "/home/paulo/Desktop/nespresso/arquivos-x"
 	args := make([]string, 0)
 	err := rename(path, args)
-	assert.Nil(t, err)	
+	assert.Nil(t, err)
 }
 
 func TestGaps(t *testing.T) {
 	path := "/home/paulo/Desktop/nespresso/arquivos-x"
-	args := []string{"1", "2", "01/01/2021", "10/01/2021"}
+	args := []string{"program", "command", "path", "01/01/2021", "10/01/2021"}
 	err := gaps(path, args)
 	assert.Nil(t, err)
-	args = []string{"1", "2", "22/01/2021", "10/01/2021"}
+	args = []string{"program", "command", "path", "22/01/2021", "10/01/2021"}
 	err = gaps(path, args)
 	assert.NotNil(t, err)
 }

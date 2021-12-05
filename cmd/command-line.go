@@ -16,7 +16,7 @@ import (
 var (
 	funcMap = map[string]interface{}{
 		"rename": rename,
-		"gaps": gaps,
+		"gaps":   gaps,
 	}
 )
 
@@ -36,7 +36,7 @@ func gapsExtraParam(args []string) (time.Time, time.Time, error) {
 	zeroTime := time.Time{}
 	if len(args) < 4 {
 		err := fmt.Errorf("not enouth parameters (should by  ./command-line command path initialDate finalDate)")
-		return zeroTime, zeroTime, err		
+		return zeroTime, zeroTime, err
 	}
 	initDate := args[3]
 	finalDate := args[4]
@@ -53,7 +53,7 @@ func gapsExtraParam(args []string) (time.Time, time.Time, error) {
 	return dInit, dFinal, nil
 }
 
-func gaps(path string, args []string) (error) {
+func gaps(path string, args []string) error {
 	initDate, endDate, err := gapsExtraParam(args)
 	if err != nil {
 		return err
@@ -66,10 +66,10 @@ func gaps(path string, args []string) (error) {
 	if err != nil {
 		return err
 	}
-	var result string
 	for _, date := range dates {
-		result = result + date.Format("02/01/206") + "; "
+		log.Printf("%v\n", date)
 	}
+
 	return nil
 }
 
@@ -81,7 +81,7 @@ func getArgs(args []string) (interface{}, string, error) {
 	path := args[2]
 	if path == "" {
 		return nil, "", fmt.Errorf("command not found (should be ./command-line command path")
-	} 
+	}
 	dir, err := os.Stat(path)
 	if err != nil {
 		return nil, "", err
@@ -90,7 +90,7 @@ func getArgs(args []string) (interface{}, string, error) {
 		return nil, "", fmt.Errorf("command %s not found (should be rename or gaps)", command)
 	}
 	if !dir.IsDir() {
-		return  nil, "", fmt.Errorf("dir %s do not exists", path)
+		return nil, "", fmt.Errorf("dir %s do not exists", path)
 	}
 	return funcMap[command], path, nil
 }
@@ -100,7 +100,7 @@ func exec(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := f.(func(string, []string)error)(p, args); err != nil {
+	if err := f.(func(string, []string) error)(p, args); err != nil {
 		return err
 	}
 	return nil

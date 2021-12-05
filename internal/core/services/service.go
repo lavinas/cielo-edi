@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
-	"time"
 	"sort"
+	"time"
 
 	"github.com/lavinas/cielo-edi/internal/core/ports"
 )
 
 const (
-	nameFormat string = "CIELO-%010d-%02d-%s-%s-%s-%s-L%03d.txt"
+	nameFormat      string = "CIELO-%010d-%02d-%s-%s-%s-%s-L%03d.txt"
 	printDateFormat string = "2006_01_02"
 )
 
 type Service struct {
 	fileManager ports.FileManagerInterface
-	header ports.HeaderInterface
+	header      ports.HeaderInterface
 }
 
 func NewService(fileManager ports.FileManagerInterface, header ports.HeaderInterface) *Service {
@@ -53,11 +53,11 @@ func (s Service) FormatNames(path string) error {
 			continue
 		}
 		act := "N"
-		if header.IsReprocessed(){
+		if header.IsReprocessed() {
 			act = "R"
 		}
-		newFilename := fmt.Sprintf(nameFormat, header.GetHeadquarter(), header.GetStatementId(), header.GetPeriodInit().Format(printDateFormat), 
-		header.GetPeriodEnd().Format(printDateFormat), act, header.GetProcessingDate().Format(printDateFormat), header.GetLayoutVersion())
+		newFilename := fmt.Sprintf(nameFormat, header.GetHeadquarter(), header.GetStatementId(), header.GetPeriodInit().Format(printDateFormat),
+			header.GetPeriodEnd().Format(printDateFormat), act, header.GetProcessingDate().Format(printDateFormat), header.GetLayoutVersion())
 		err = s.fileManager.RenameFile(path, file.Name(), newFilename)
 		if err != nil {
 			log.Printf("No: %s - %v", file.Name(), err)
@@ -89,10 +89,10 @@ func (s Service) GetPeriodMap(path string) (map[time.Time]int, error) {
 				dMap[d] = val + 1
 			} else {
 				dMap[d] = 1
-			} 
+			}
 		}
 	}
-	return dMap, err	
+	return dMap, err
 }
 
 func (s Service) GetPeriod(path string) ([]time.Time, error) {
@@ -104,20 +104,20 @@ func (s Service) GetPeriod(path string) ([]time.Time, error) {
 	for d := range dMap {
 		dates = append(dates, d)
 	}
-	sort.Slice(dates, func(i, j int) bool {return dates[i].After(dates[j])})
+	sort.Slice(dates, func(i, j int) bool { return dates[i].After(dates[j]) })
 	return dates, nil
 }
 
 func (s Service) GetPeriodGap(path string, initDate time.Time, endDate time.Time) ([]time.Time, error) {
 	searchPeriod := make([]time.Time, 0)
-	if initDate.Equal(time.Time{}) || endDate.Equal(time.Time{}){
+	if initDate.Equal(time.Time{}) || endDate.Equal(time.Time{}) {
 		return searchPeriod, fmt.Errorf("period is empty")
-	} 
+	}
 	if initDate.After(endDate) {
 		return searchPeriod, fmt.Errorf("initDate after endDate")
 	}
 	for t := initDate; !t.After(endDate); t = t.Add(24 * time.Hour) {
-		searchPeriod = append(searchPeriod, t)		
+		searchPeriod = append(searchPeriod, t)
 	}
 	mdMap, err := s.GetPeriodMap(path)
 	if err != nil {
@@ -131,6 +131,3 @@ func (s Service) GetPeriodGap(path string, initDate time.Time, endDate time.Time
 	}
 	return gaps, nil
 }
-
-
-
