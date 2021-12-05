@@ -32,4 +32,5 @@ type HeaderDataInterface interface {
 	GetLayoutVersion() int8
 	GetAcquirer() string
 	IsReprocessed() bool
+	GetPeriodDates() ([]time.Time, error) 
 }

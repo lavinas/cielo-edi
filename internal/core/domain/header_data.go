@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -64,4 +65,18 @@ func (d HeaderData) GetLayoutVersion() int8 {
 
 func (d HeaderData) IsReprocessed() bool {
 	return d.Sequence == 9999999
+}
+
+func (d HeaderData) GetPeriodDates() ([]time.Time, error) {
+	times := make([]time.Time, 0)
+	if d.PeriodInit.Equal(time.Time{}) || d.PeriodEnd.Equal(time.Time{}){
+		return times, fmt.Errorf("period is empty")
+	} 
+	if d.PeriodInit.After(d.PeriodEnd) {
+		return times, fmt.Errorf("initial period after final period")
+	}
+	for t := d.PeriodInit; !t.After(d.PeriodEnd); t = t.Add(24 * time.Hour) {
+		times = append(times, t)		
+	}
+	return times, nil
 }

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"testing"
 	"time"
+	"fmt"
 
 	"github.com/lavinas/cielo-edi/internal/core/ports"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,6 @@ func (f FileManagerMock) RenameFile(string, string, string) error {
 	return nil
 }
 
-
 // Header Data Mock
 type HeaderDataMock struct {
 	headquarter int64
@@ -71,9 +71,8 @@ type HeaderDataMock struct {
 	layoutVersion int8
 	isReprocessed bool
 }
-
 func NewHeaderDataMock(hq int64, pd time.Time, pi time.Time, pe time.Time, sq int, st int8, lv int8, ip bool) ports.HeaderDataInterface {
-	return &HeaderDataMock{headquarter: hq, processingDate: pd, periodInit: pi, periodEnd: pd, sequence: sq, 
+	return &HeaderDataMock{headquarter: hq, processingDate: pd, periodInit: pi, periodEnd: pe, sequence: sq, 
 		statementId: st, layoutVersion: lv, isReprocessed: ip}
 } 
 func (d *HeaderDataMock) GetHeadquarter() int64 {
@@ -103,6 +102,19 @@ func (d *HeaderDataMock) IsReprocessed() bool {
 func (d *HeaderDataMock) GetAcquirer() string {
 	return "CIELO"
 }
+func (d HeaderDataMock) GetPeriodDates() ([]time.Time, error) {
+	times := make([]time.Time, 0)
+	if d.periodInit.Equal(time.Time{}) || d.periodEnd.Equal(time.Time{}){
+		return times, fmt.Errorf("period is empty")
+	} 
+	if d.periodInit.After(d.periodEnd) {
+		return times, fmt.Errorf("initial period after final period")
+	}
+	for t := d.periodInit; !t.After(d.periodEnd); t = t.Add(24 * time.Hour) {
+		times = append(times, t)		
+	}
+	return times, nil
+}
 
 // Header mock
 type HeaderMock struct {
@@ -131,7 +143,10 @@ func TestGetFilesOk(t *testing.T) {
 	fi = append(fi, NewFileInfoMock(files[0], false))
 	fm := NewFileManagerMock(fi)
 	// Load Header
-	hd := NewHeaderDataMock(int64(123445), time.Now(), time.Now(), time.Now(), 123, int8(4), int8(14), true)
+	initDate, _ := time.Parse(printDateFormat, "2021-01-01")
+	endDate, _ := time.Parse(printDateFormat, "2021-01-10")
+	procDate, _ := time.Parse(printDateFormat, "2021-01-10")
+	hd := NewHeaderDataMock(int64(123445), procDate, initDate, endDate, 123, int8(4), int8(14), true)
 	he := NewHeaderMock(hd, true)
 	// get service
 	service := NewService(fm, he)
@@ -146,10 +161,91 @@ func TestFormatNames(t *testing.T) {
 	fi = append(fi, NewFileInfoMock(files[0], false))
 	fm := NewFileManagerMock(fi)
 	// Load Header
-	hd := NewHeaderDataMock(int64(123445), time.Now(), time.Now(), time.Now(), 123, int8(4), int8(14), true)
+	initDate, _ := time.Parse(printDateFormat, "2021-01-01")
+	endDate, _ := time.Parse(printDateFormat, "2021-01-10")
+	procDate, _ := time.Parse(printDateFormat, "2021-01-10")
+	hd := NewHeaderDataMock(int64(123445), procDate, initDate, endDate, 123, int8(4), int8(14), true)
 	he := NewHeaderMock(hd, true)
 	// get service
 	service := NewService(fm, he)
 	err := service.FormatNames(path)
 	assert.Nil(t, err)
 }
+
+func TestGetPeriodMap (t *testing.T) {
+	// Load FileManager
+	fi := make([]fs.FileInfo, 0)
+	fi = append(fi, NewFileInfoMock(files[0], false))
+	fm := NewFileManagerMock(fi)
+	// Load Header
+	initDate, _ := time.Parse(printDateFormat, "2021_01_01")
+	endDate, _ := time.Parse(printDateFormat, "2021_01_10")
+	procDate, _ := time.Parse(printDateFormat, "2021_01_10")
+	hd := NewHeaderDataMock(int64(123445), procDate, initDate, endDate, 123, int8(4), int8(14), true)
+	he := NewHeaderMock(hd, true)
+	// get service
+	service := NewService(fm, he)
+	dm, err := service.GetPeriodMap(path)
+	assert.Nil(t, err)
+	assert.Len(t, dm, 10)
+	assert.Contains(t, dm, initDate)
+	assert.Equal(t, 1, dm[initDate])
+	assert.Contains(t, dm, endDate)
+	assert.Equal(t, 1, dm[endDate])
+	nDate, _ := time.Parse(printDateFormat, "2020_12_31")
+	assert.NotContains(t, dm, nDate)
+	nDate, _ = time.Parse(printDateFormat, "2020_02_01")
+	assert.NotContains(t, dm, nDate)
+} 
+
+func TestGetPeriodGap (t *testing.T) {
+	// Load FileManager
+	fi := make([]fs.FileInfo, 0)
+	fi = append(fi, NewFileInfoMock(files[0], false))
+	fm := NewFileManagerMock(fi)
+	// Load Header
+	initDate, _ := time.Parse(printDateFormat, "2021_01_01")
+	endDate, _ := time.Parse(printDateFormat, "2021_01_10")
+	procDate, _ := time.Parse(printDateFormat, "2021_01_10")
+	hd := NewHeaderDataMock(int64(123445), procDate, initDate, endDate, 123, int8(4), int8(14), true)
+	he := NewHeaderMock(hd, true)
+	// get service
+	service := NewService(fm, he)
+	dates, err := service.GetPeriodGap(path, initDate, endDate)
+	assert.Nil(t, err)
+	assert.Len(t, dates, 0)
+	initDate, _ = time.Parse(printDateFormat, "2020_12_31")
+	dates, err = service.GetPeriodGap(path, initDate, endDate)
+	assert.Nil(t, err)
+	assert.Len(t, dates, 1)
+	assert.Contains(t, dates, initDate)
+	endDate, _ = time.Parse(printDateFormat, "2021_01_12")
+	dates, err = service.GetPeriodGap(path, initDate, endDate)
+	assert.Nil(t, err)
+	assert.Len(t, dates, 3)
+	assert.Contains(t, dates, initDate)
+	assert.Contains(t, dates, endDate)
+	nDate, _ := time.Parse(printDateFormat, "2020_01_01")
+	assert.NotContains(t, dates, nDate)
+}
+
+func TestGetPeriod (t *testing.T) {
+	// Load FileManager
+	fi := make([]fs.FileInfo, 0)
+	fi = append(fi, NewFileInfoMock(files[0], false))
+	fm := NewFileManagerMock(fi)
+	// Load Header
+	initDate, _ := time.Parse(printDateFormat, "2021_01_01")
+	endDate, _ := time.Parse(printDateFormat, "2021_01_10")
+	procDate, _ := time.Parse(printDateFormat, "2021_01_10")
+	hd := NewHeaderDataMock(int64(123445), procDate, initDate, endDate, 123, int8(4), int8(14), true)
+	he := NewHeaderMock(hd, true)
+	// get service
+	service := NewService(fm, he)
+	dates, err := service.GetPeriod(path)
+	assert.Nil(t, err)
+	assert.Contains(t, dates, initDate)
+	assert.Contains(t, dates, endDate)
+}
+
+
