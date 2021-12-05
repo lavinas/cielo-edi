@@ -78,11 +78,11 @@ func (s Service) GetPeriodMap(path string) (map[time.Time]int, error) {
 	for _, f := range files {
 		hData, err := s.GetHeaderData(path, f)
 		if err != nil {
-			return make(map[time.Time]int), err
+			continue
 		}
 		ds, err := hData.GetPeriodDates()
 		if err != nil {
-			return make(map[time.Time]int), err
+			continue
 		}
 		for _, d := range ds {
 			if val, ok := dMap[d]; ok {
