@@ -143,7 +143,7 @@ func getAcquirer(args []string) (ports.HeaderDataInterface, error) {
 		return nil, fmt.Errorf("command not found (should be ./command-line command acquirer path")
 	}
 	if _, ok := acquirerMap[acquirer]; !ok {
-		return nil, fmt.Errorf("acquirer name %s not found (should be cielo, redecredito, getnet)", acquirer)
+		return nil, fmt.Errorf("acquirer name %s not found (should be cielovendas, cielofinanceiro, cieloantecipacoes, redecredito, redebito, redefinanceiro, getnet)", acquirer)
 	}
 	return acquirerMap[acquirer], nil
 }
@@ -157,7 +157,7 @@ func getParserType(args []string) (string, error) {
 		return "", fmt.Errorf("command not found (should be ./command-line command acquirer path")
 	}
 	if _, ok := acquirerMap[acquirer]; !ok {
-		return "", fmt.Errorf("acquirer name %s not found (should be cielo, redecredito, getnet)", acquirer)
+		return "", fmt.Errorf("acquirer name %s not found (should be cielovendas, cielofinanceiro, cieloantecipacoes, redecredito, redebito, redefinanceiro, getnet)", acquirer)
 	}
 	return parserTypeMap[acquirer], nil
 }
