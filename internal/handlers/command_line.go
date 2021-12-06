@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"github.com/pkg/errors"
 
 	"github.com/lavinas/cielo-edi/internal/core/domain"
 	"github.com/lavinas/cielo-edi/internal/core/services"
@@ -22,18 +21,46 @@ var (
 		"periods": periods,
 	}
 	acquirerMap = map[string]ports.HeaderDataInterface{
-		"cielo": &domain.HeaderCielo{},
-		"redecredito": &domain.HeaderRedeCredito{},
-		"rededebito": &domain.HeaderRedeDebito{},
+		"cielovendas": &domain.HeaderCielo{Statement: "vendas"},
+		"cielofinanceiro": &domain.HeaderCielo{Statement: "financeiro"},
+		"cieloantecipacoes": &domain.HeaderCielo{Statement: "antecipacoes"},
+		"redecredito": &domain.HeaderRedeCredito{Statement: "credito"},
+		"rededebito": &domain.HeaderRedeDebito{Statement: "debito"},
+		"redefinanceiro": &domain.HeaderRedeCredito{Statement: "financeiro"},
 		"getnet": &domain.HeaderGetnet{},
 	}
 	parserTypeMap = map[string]string{
-		"cielo": "position",
+		"cielovendas": "position",
+		"cielofinanceiro": "position",
+		"cieloantecipacoes": "position",
 		"redecredito": "position",
 		"rededebito": "csv",
+		"redefinanceiro": "position",
 		"getnet": "position",
 	}
 )
+
+type CommandLine struct {
+}
+
+func NewCommandLine() *CommandLine{
+	return &CommandLine{}
+}
+
+func (cm CommandLine) Run(args []string) error {
+	function, headerData, parserType, path, err := getArgs(args)
+	if err != nil {
+		return err
+	}
+	parser := string_parser.NewStringParser(parserType)
+	manager := file_manager.NewFileManager()
+	header := domain.NewHeader(headerData, parser)
+	service := services.NewService(manager, header)
+	if err := function.(func(ports.ServiceInterface, string, []string) error)(service, path, args); err != nil {
+		return err
+	}
+	return nil
+}
 
 func rename(service ports.ServiceInterface, path string, args []string) error {
 	err := service.FormatNames(path)
@@ -45,7 +72,7 @@ func rename(service ports.ServiceInterface, path string, args []string) error {
 
 func gapsExtraParam(args []string) (time.Time, time.Time, error) {
 	zeroTime := time.Time{}
-	if len(args) < 6 {
+	if len(args) < 5 {
 		err := fmt.Errorf("not enouth parameters (should by ./command-line command path initialDate finalDate)")
 		return zeroTime, zeroTime, err
 	}
@@ -118,6 +145,7 @@ func getAcquirer(args []string)(ports.HeaderDataInterface, error) {
 	return acquirerMap[acquirer], nil
 }
 
+
 func getParserType(args []string)(string, error) {
 	if len(args) < 3 {
 		return "", fmt.Errorf("command not found (should be ./command-line command acquirer path")
@@ -170,28 +198,6 @@ func getArgs(args []string) (interface{}, ports.HeaderDataInterface, string, str
 	if err != nil {
 		return nil, nil, "", "", err
 	}
-
 	return command, acquirer, parseType, path, nil
 }
 
-func exec(args []string) error {
-	function, headerData, parserType, path, err := getArgs(args)
-	if err != nil {
-		return err
-	}
-	parser := string_parser.NewStringParser(parserType)
-	manager := file_manager.NewFileManager()
-	header := domain.NewHeader(headerData, parser)
-	service := services.NewService(manager, header)
-	if err := function.(func(ports.ServiceInterface, string, []string) error)(service, path, args); err != nil {
-		return err
-	}
-	return nil
-}
-
-func main() {
-	if err := exec(os.Args); err != nil {
-		err = errors.Wrap(err, "Error")
-		log.Println(err)
-	}
-}

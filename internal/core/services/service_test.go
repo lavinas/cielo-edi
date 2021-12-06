@@ -118,7 +118,7 @@ func (d HeaderDataMock) GetPeriodDates() ([]time.Time, error) {
 	}
 	return times, nil
 }
-func (d HeaderDataMock) IsLoaded() bool {
+func (d HeaderDataMock) IsValid() bool {
 	return true
 }
 
@@ -137,7 +137,7 @@ func (h HeaderMock) Parse(string) error {
 	}
 	return errors.New("Parse Error")
 }
-func (h HeaderMock) IsLoaded() bool {
+func (h HeaderMock) IsValid() bool {
 	return h.loaded
 }
 func (h HeaderMock) GetData() ports.HeaderDataInterface {
@@ -259,13 +259,13 @@ func TestGetGapStr(t *testing.T) {
 	assert.Len(t, dates, 1)
 	assert.Equal(t, "31/12/2020 - 31/12/2020", dates[0])
 	initDate, _ = time.Parse(printDateFormat, "2021_02_01")
-	endDate, _  = time.Parse(printDateFormat, "2021_02_10")
+	endDate, _ = time.Parse(printDateFormat, "2021_02_10")
 	dates, err = service.GetGapGrouped(path, initDate, endDate)
 	assert.Nil(t, err)
 	assert.Len(t, dates, 1)
 	assert.Equal(t, "01/02/2021 - 10/02/2021", dates[0])
 	initDate, _ = time.Parse(printDateFormat, "2020_12_31")
-	endDate, _  = time.Parse(printDateFormat, "2021_02_12")
+	endDate, _ = time.Parse(printDateFormat, "2021_02_12")
 	dates, err = service.GetGapGrouped(path, initDate, endDate)
 	assert.Nil(t, err)
 	assert.Len(t, dates, 2)

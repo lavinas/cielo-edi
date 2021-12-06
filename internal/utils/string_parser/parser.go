@@ -61,6 +61,10 @@ func (s StringParser) ParseField(source interface{}, fieldName string, txt strin
 	if err != nil {
 		return txtPos, err
 	}
+	// Discard "-"
+	if fieldTag == "-" {
+		return txtPos, nil
+	}
 	// set values
 	var fieldLen int
 	switch fieldIndex {
@@ -87,7 +91,7 @@ func (s StringParser) ParseField(source interface{}, fieldName string, txt strin
 		reflect.ValueOf(source).Elem().FieldByName(fieldName).Set(reflect.ValueOf(tVal))
 
 	default:
-		return txtPos, fmt.Errorf("invalid tag type")
+		return txtPos, fmt.Errorf("invalid type")
 	}
 	return txtPos + fieldLen, nil
 }

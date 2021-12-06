@@ -6,7 +6,16 @@ import (
 	"time"
 )
 
+
+var (
+	redeCreditoMap = map[string]string{
+		"credito": "EEVC",
+		"financeiro":  "EEFI",
+	}
+)
+
 type HeaderRedeCredito struct {
+	Statement            string    `txt:"-"`
 	RegisterType         int8      `txt:"3"`
 	ProcessingDate       time.Time `txt:"ddmmyyyy"`
 	Acquirer             string    `txt:"8"`
@@ -17,6 +26,7 @@ type HeaderRedeCredito struct {
 	ProcessingType       string    `txt:"15"`
 	LayoutVersion        string    `txt:"20"`
 }
+
 func (d HeaderRedeCredito) GetHeadquarter() int64 {
 	return d.Headquarter
 }
@@ -54,6 +64,21 @@ func (d HeaderRedeCredito) GetPeriodDates() ([]time.Time, error) {
 	return ret, nil
 }
 
-func (d HeaderRedeCredito) IsLoaded() bool {
-	return d.ProcessingDate != time.Time{} && strings.Contains(strings.ToLower(d.Acquirer), "rede") && d.LayoutVersion != ""
+func (d HeaderRedeCredito) IsValid() bool {
+	if d.ProcessingDate.Equal(time.Time{}) {
+		return false
+	}
+	if !strings.Contains(strings.ToLower(d.Acquirer), "rede") {
+		return false
+	}
+	if d.LayoutVersion == "" {
+		return false
+	}
+	if _, ok := redeCreditoMap[d.Statement]; !ok {
+		return false
+	}
+	if !strings.Contains(d.LayoutVersion, redeCreditoMap[d.Statement]) {
+		return false
+	}
+	return true
 }

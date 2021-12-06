@@ -37,3 +37,31 @@ func TestGetPeriodDates(t *testing.T) {
 	assert.Equal(t, dt, dates[0])
 }
 
+func TestIsValidRede(t *testing.T) {
+	pd, _ := time.Parse("2006-01-02", "2021-01-10")
+	d := HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "V3.01 - 09/06 - EEFI", Statement: "financeiro"}
+	iv := d.IsValid()
+	assert.True(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "V2.01 - 09/06 - EEVC", Statement: "credito"}
+	iv = d.IsValid()
+	assert.True(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "V2.01 - 09/06 - EEVD", Statement: "debito"}
+	iv = d.IsValid()
+	assert.False(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "cielo", LayoutVersion: "V3.01 - 09/06 - EEFI", Statement: "financeiro"}
+	iv = d.IsValid()
+	assert.False(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "V3.01 - 09/06 - EEVC", Statement: "financeiro"}
+	iv = d.IsValid()
+	assert.False(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "", Statement: "financeiro"}
+	iv = d.IsValid()
+	assert.False(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "", Statement: ""}
+	iv = d.IsValid()
+	assert.False(t, iv)
+	d = HeaderRedeCredito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "EX", Statement: ""}
+	iv = d.IsValid()
+	assert.False(t, iv)
+}
+

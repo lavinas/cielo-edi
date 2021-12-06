@@ -32,7 +32,7 @@ func (s Service) GetHeaderData(path string, file fs.FileInfo) (ports.HeaderDataI
 	if err := s.header.Parse(date); err != nil {
 		return nil, fmt.Errorf("error parsing %s", file.Name())
 	}
-	if !s.header.IsLoaded() {
+	if !s.header.IsValid() {
 		return nil, fmt.Errorf("%s is not a valid file", file.Name())
 	}
 	d := s.header.GetData()
@@ -56,9 +56,9 @@ func (s Service) FormatNames(path string) error {
 		if h.IsReprocessed() {
 			act = "R"
 		}
-		newFilename := fmt.Sprintf(nameFormat, h.GetAcquirer(), h.GetHeadquarter(), h.GetStatementId(), 
-		h.GetPeriodInit().Format(printDateFormat), h.GetPeriodEnd().Format(printDateFormat), act, 
-		h.GetProcessingDate().Format(printDateFormat), h.GetLayoutVersion())
+		newFilename := fmt.Sprintf(nameFormat, h.GetAcquirer(), h.GetHeadquarter(), h.GetStatementId(),
+			h.GetPeriodInit().Format(printDateFormat), h.GetPeriodEnd().Format(printDateFormat), act,
+			h.GetProcessingDate().Format(printDateFormat), h.GetLayoutVersion())
 		err = s.fileManager.RenameFile(path, file.Name(), newFilename)
 		if err != nil {
 			log.Printf("No: %s - %v", file.Name(), err)
@@ -133,12 +133,12 @@ func (s Service) GetGap(path string, initDate time.Time, endDate time.Time) ([]t
 	return gaps, nil
 }
 
-func (s Service) GetGrouped(dates []time.Time) ([]string) {
+func (s Service) GetGrouped(dates []time.Time) []string {
 	pInit := time.Time{}
-	pEnd  := time.Time{}
-	ret   := make([]string, 0)
+	pEnd := time.Time{}
+	ret := make([]string, 0)
 	for _, date := range dates {
-		if pInit.Equal(time.Time{}){
+		if pInit.Equal(time.Time{}) {
 			pInit = date
 			pEnd = date
 		}
@@ -151,7 +151,7 @@ func (s Service) GetGrouped(dates []time.Time) ([]string) {
 			pEnd = date
 		}
 	}
-	if !pInit.Equal(time.Time{}){
+	if !pInit.Equal(time.Time{}) {
 		strRet := fmt.Sprintf("%s - %s", pInit.Format("02/01/2006"), pEnd.Format("02/01/2006"))
 		ret = append(ret, strRet)
 	}

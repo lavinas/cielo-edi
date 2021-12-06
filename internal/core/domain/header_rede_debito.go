@@ -1,12 +1,19 @@
 package domain
 
 import (
-	"time"
 	"strconv"
 	"strings"
+	"time"
+)
+
+var (
+	redeDebitoMap = map[string]string{
+		"debito": "EEVD",
+	}
 )
 
 type HeaderRedeDebito struct {
+	Statement        string    `txt:"-"`
 	RegisterType     int8      `txt:"2"`
 	HeadquarterId    int64     `txt:"9"`
 	ProcessingDate   time.Time `txt:"ddmmyyyy"`
@@ -55,6 +62,21 @@ func (d HeaderRedeDebito) GetPeriodDates() ([]time.Time, error) {
 	ret[0] = d.PeriodDate
 	return ret, nil
 }
-func (d HeaderRedeDebito) IsLoaded() bool {
-	return d.ProcessingDate != time.Time{} && strings.Contains(strings.ToLower(d.Acquirer), "rede") && d.LayoutVersion != ""
+func (d HeaderRedeDebito) IsValid() bool {
+	if d.ProcessingDate.Equal(time.Time{}) {
+		return false
+	}
+	if !strings.Contains(strings.ToLower(d.Acquirer), "rede") {
+		return false
+	}
+	if d.LayoutVersion == "" {
+		return false
+	}
+	if _, ok := redeDebitoMap[d.Statement]; !ok {
+		return false
+	}
+	if !strings.Contains(d.LayoutVersion, redeDebitoMap[d.Statement]) {
+		return false
+	}
+	return true
 }

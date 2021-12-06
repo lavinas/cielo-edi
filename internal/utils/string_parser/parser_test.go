@@ -8,6 +8,7 @@ import (
 )
 
 type Header struct {
+	Filler1         string    `txt:"-"`
 	RegisterType    int8      `txt:"1"`        // 0
 	HeadquarterId   int64     `txt:"10"`       // 1
 	ProcDate        time.Time `txt:"yyyymmdd"` // 11
@@ -15,6 +16,7 @@ type Header struct {
 	PeriodEndDate   time.Time `txt:"yyyymmdd"` // 27
 	Sequence        int       `txt:"7"`        // 35
 	Acquirer        string    `txt:"5"`        // 42
+	Filler2         string    `txt:"-"`
 	StatementOption int8      `txt:"2"`        // 47
 	Transmition     string    `txt:"1"`        // 49
 	PostalBox       string    `txt:"20"`       // 50

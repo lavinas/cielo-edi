@@ -17,7 +17,7 @@ type FileManagerInterface interface {
 
 type HeaderInterface interface {
 	Parse(string) error
-	IsLoaded() bool
+	IsValid() bool
 	GetData() HeaderDataInterface
 }
 
@@ -31,11 +31,15 @@ type HeaderDataInterface interface {
 	GetAcquirer() string
 	IsReprocessed() bool
 	GetPeriodDates() ([]time.Time, error)
-	IsLoaded() bool
+	IsValid() bool
 }
 
 type ServiceInterface interface {
 	FormatNames(string) error
 	GetGapGrouped(string, time.Time, time.Time) ([]string, error)
 	GetPeriodGrouped(string) ([]string, error)
+}
+
+type CommandLineInterface interface {
+	Run([]string) error
 }

@@ -52,6 +52,6 @@ func (d HeaderGetnet) GetPeriodDates() ([]time.Time, error) {
 	ret[0] = d.PeriodDate
 	return ret, nil
 }
-func (d HeaderGetnet) IsLoaded() bool {
+func (d HeaderGetnet) IsValid() bool {
 	return d.AcquirerCNPJ == "10440482000154"
 }

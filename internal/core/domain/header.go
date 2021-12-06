@@ -25,6 +25,6 @@ func (h Header) GetData() ports.HeaderDataInterface {
 	return h.data
 }
 
-func (h Header) IsLoaded() bool {
-	return h.data.IsLoaded()
+func (h Header) IsValid() bool {
+	return h.data.IsValid()
 }

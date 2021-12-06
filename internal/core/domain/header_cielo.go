@@ -5,7 +5,16 @@ import (
 	"time"
 )
 
+var (
+	cieloMap = map[string]int8{
+		"vendas": int8(3),
+		"financeiro": int8(4),
+		"antecipacoes": int8(6),
+	}
+)
+
 type HeaderCielo struct {
+	Statement      string    `txt:"-"`
 	RegisterType   int8      `txt:"1"`
 	Headquarter    int64     `txt:"10"`
 	ProcessingDate time.Time `txt:"yyyymmdd"`
@@ -58,6 +67,21 @@ func (d HeaderCielo) GetPeriodDates() ([]time.Time, error) {
 	}
 	return times, nil
 }
-func (d HeaderCielo) IsLoaded() bool {
-	return d.ProcessingDate != time.Time{} && d.Acquirer == "CIELO" && d.LayoutVersion != 0
+func (d HeaderCielo) IsValid() bool {
+	if d.ProcessingDate.Equal(time.Time{}){
+		return false
+	}
+	if d.Acquirer != "CIELO" {
+		return false
+	}
+	if d.LayoutVersion == 0 {
+		return false
+	}
+	if _, ok := cieloMap[d.Statement]; !ok {
+		return false
+	}
+	if cieloMap[d.Statement] != d.StatementId {
+		return false
+	}
+	return true
 }
