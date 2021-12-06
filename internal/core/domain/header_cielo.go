@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -50,7 +51,7 @@ func (d HeaderCielo) GetLayoutVersion() int8 {
 	return d.LayoutVersion
 }
 func (d HeaderCielo) GetAcquirer() string {
-	return d.Acquirer
+	return strings.ToUpper(d.Acquirer)
 }
 func (d HeaderCielo) IsReprocessed() bool {
 	return d.Sequence == 9999999

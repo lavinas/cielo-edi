@@ -15,6 +15,11 @@ type FileManagerInterface interface {
 	RenameFile(string, string, string) error
 }
 
+type LoggerInterface interface {
+	Printf(string, ...interface{})
+	Println(...interface{})
+}
+
 type HeaderInterface interface {
 	Parse(string) error
 	IsValid() bool
@@ -35,7 +40,7 @@ type HeaderDataInterface interface {
 }
 
 type ServiceInterface interface {
-	FormatNames(string) error
+	FormatNames(string) ([]string, error)
 	GetGapGrouped(string, time.Time, time.Time) ([]string, error)
 	GetPeriodGrouped(string) ([]string, error)
 }

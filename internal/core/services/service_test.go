@@ -175,8 +175,9 @@ func TestFormatNames(t *testing.T) {
 	he := NewHeaderMock(hd, true)
 	// get service
 	service := NewService(fm, he)
-	err := service.FormatNames(path)
+	logger, err := service.FormatNames(path)
 	assert.Nil(t, err)
+	assert.Len(t, logger, 1)
 }
 
 func TestGetPeriodMap(t *testing.T) {

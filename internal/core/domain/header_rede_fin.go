@@ -7,13 +7,12 @@ import (
 )
 
 var (
-	redeCreditoMap = map[string]string{
-		"credito":    "EEVC",
+	redeFinMap = map[string]string{
 		"financeiro": "EEFI",
 	}
 )
 
-type HeaderRedeCredito struct {
+type HeaderRedeFin struct {
 	Statement            string    `txt:"-"`
 	RegisterType         int8      `txt:"3"`
 	ProcessingDate       time.Time `txt:"ddmmyyyy"`
@@ -26,44 +25,44 @@ type HeaderRedeCredito struct {
 	LayoutVersion        string    `txt:"20"`
 }
 
-func (d HeaderRedeCredito) GetHeadquarter() int64 {
+func (d HeaderRedeFin) GetHeadquarter() int64 {
 	return d.Headquarter
 }
-func NewHeaderRedeCredito() *HeaderRedeCredito {
-	return &HeaderRedeCredito{}
+func NewHeaderRedeFin() *HeaderRedeFin {
+	return &HeaderRedeFin{}
 }
-func (d HeaderRedeCredito) GetProcessingDate() time.Time {
+func (d HeaderRedeFin) GetProcessingDate() time.Time {
 	return d.ProcessingDate
 }
-func (d HeaderRedeCredito) GetPeriodInit() time.Time {
+func (d HeaderRedeFin) GetPeriodInit() time.Time {
 	return d.ProcessingDate
 }
-func (d HeaderRedeCredito) GetPeriodEnd() time.Time {
+func (d HeaderRedeFin) GetPeriodEnd() time.Time {
 	return d.ProcessingDate
 }
-func (d HeaderRedeCredito) GetStatementId() string {
+func (d HeaderRedeFin) GetStatementId() string {
 	return d.LayoutVersion[16:20]
 }
-func (d HeaderRedeCredito) GetLayoutVersion() int8 {
+func (d HeaderRedeFin) GetLayoutVersion() int8 {
 	v, err := strconv.ParseInt(string(d.LayoutVersion[1]), 10, 8)
 	if err != nil {
 		v = int64(0)
 	}
 	return int8(v)
 }
-func (d HeaderRedeCredito) GetAcquirer() string {
-	return d.Acquirer
+func (d HeaderRedeFin) GetAcquirer() string {
+	return strings.ToUpper(d.Acquirer)
 }
-func (d HeaderRedeCredito) IsReprocessed() bool {
+func (d HeaderRedeFin) IsReprocessed() bool {
 	return strings.Contains(strings.ToLower(d.ProcessingType), "repro")
 }
-func (d HeaderRedeCredito) GetPeriodDates() ([]time.Time, error) {
+func (d HeaderRedeFin) GetPeriodDates() ([]time.Time, error) {
 	ret := make([]time.Time, 1)
 	ret[0] = d.ProcessingDate
 	return ret, nil
 }
 
-func (d HeaderRedeCredito) IsValid() bool {
+func (d HeaderRedeFin) IsValid() bool {
 	if d.ProcessingDate.Equal(time.Time{}) {
 		return false
 	}
@@ -73,10 +72,10 @@ func (d HeaderRedeCredito) IsValid() bool {
 	if d.LayoutVersion == "" {
 		return false
 	}
-	if _, ok := redeCreditoMap[d.Statement]; !ok {
+	if _, ok := redeFinMap[d.Statement]; !ok {
 		return false
 	}
-	if !strings.Contains(d.LayoutVersion, redeCreditoMap[d.Statement]) {
+	if !strings.Contains(d.LayoutVersion, redeFinMap[d.Statement]) {
 		return false
 	}
 	return true

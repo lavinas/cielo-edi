@@ -31,7 +31,7 @@ func TestParseCieloError(t *testing.T) {
 
 func TestParseRedeOk(t *testing.T) {
 	parser := string_parser.NewStringParser("position")
-	hd := &HeaderRedeCredito{}
+	hd := &HeaderRedeFin{}
 	header := NewHeader(hd, parser)
 	err := header.Parse(redeheaderline)
 	data := header.GetData()

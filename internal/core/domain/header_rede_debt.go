@@ -12,7 +12,7 @@ var (
 	}
 )
 
-type HeaderRedeDebito struct {
+type HeaderRedeDebt struct {
 	Statement        string    `txt:"-"`
 	RegisterType     int8      `txt:"2"`
 	HeadquarterId    int64     `txt:"9"`
@@ -26,43 +26,43 @@ type HeaderRedeDebito struct {
 	LayoutVersion    string    `txt:"20"`
 }
 
-func (d HeaderRedeDebito) GetHeadquarter() int64 {
+func (d HeaderRedeDebt) GetHeadquarter() int64 {
 	return d.HeadquarterId
 }
-func NewHeaderRedeDebito() *HeaderRedeDebito {
-	return &HeaderRedeDebito{}
+func NewHeaderRedeDebt() *HeaderRedeDebt {
+	return &HeaderRedeDebt{}
 }
-func (d HeaderRedeDebito) GetProcessingDate() time.Time {
+func (d HeaderRedeDebt) GetProcessingDate() time.Time {
 	return d.ProcessingDate
 }
-func (d HeaderRedeDebito) GetPeriodInit() time.Time {
+func (d HeaderRedeDebt) GetPeriodInit() time.Time {
 	return d.PeriodDate
 }
-func (d HeaderRedeDebito) GetPeriodEnd() time.Time {
+func (d HeaderRedeDebt) GetPeriodEnd() time.Time {
 	return d.PeriodDate
 }
-func (d HeaderRedeDebito) GetStatementId() string {
+func (d HeaderRedeDebt) GetStatementId() string {
 	return d.LayoutVersion[16:20]
 }
-func (d HeaderRedeDebito) GetLayoutVersion() int8 {
+func (d HeaderRedeDebt) GetLayoutVersion() int8 {
 	v, err := strconv.ParseInt(string(d.LayoutVersion[1]), 10, 8)
 	if err != nil {
 		v = int64(0)
 	}
 	return int8(v)
 }
-func (d HeaderRedeDebito) GetAcquirer() string {
-	return d.Acquirer
+func (d HeaderRedeDebt) GetAcquirer() string {
+	return strings.ToUpper(d.Acquirer)
 }
-func (d HeaderRedeDebito) IsReprocessed() bool {
+func (d HeaderRedeDebt) IsReprocessed() bool {
 	return strings.Contains(strings.ToLower(d.ProcessingType), "repro")
 }
-func (d HeaderRedeDebito) GetPeriodDates() ([]time.Time, error) {
+func (d HeaderRedeDebt) GetPeriodDates() ([]time.Time, error) {
 	ret := make([]time.Time, 1)
 	ret[0] = d.PeriodDate
 	return ret, nil
 }
-func (d HeaderRedeDebito) IsValid() bool {
+func (d HeaderRedeDebt) IsValid() bool {
 	if d.ProcessingDate.Equal(time.Time{}) {
 		return false
 	}

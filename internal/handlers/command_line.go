@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -24,9 +23,9 @@ var (
 		"cielovendas":       &domain.HeaderCielo{Statement: "vendas"},
 		"cielofinanceiro":   &domain.HeaderCielo{Statement: "financeiro"},
 		"cieloantecipacoes": &domain.HeaderCielo{Statement: "antecipacoes"},
-		"redecredito":       &domain.HeaderRedeCredito{Statement: "credito"},
-		"rededebito":        &domain.HeaderRedeDebito{Statement: "debito"},
-		"redefinanceiro":    &domain.HeaderRedeCredito{Statement: "financeiro"},
+		"redecredito":       &domain.HeaderRedeCredit{Statement: "credito"},
+		"rededebito":        &domain.HeaderRedeDebt{Statement: "debito"},
+		"redefinanceiro":    &domain.HeaderRedeFin{Statement: "financeiro"},
 		"getnet":            &domain.HeaderGetnet{},
 	}
 	parserTypeMap = map[string]string{
@@ -41,10 +40,11 @@ var (
 )
 
 type CommandLine struct {
+	logger ports.LoggerInterface
 }
 
-func NewCommandLine() *CommandLine {
-	return &CommandLine{}
+func NewCommandLine(logger ports.LoggerInterface) *CommandLine {
+	return &CommandLine{logger: logger}
 }
 
 func (cm CommandLine) Run(args []string) error {
@@ -56,16 +56,45 @@ func (cm CommandLine) Run(args []string) error {
 	manager := file_manager.NewFileManager()
 	header := domain.NewHeader(headerData, parser)
 	service := services.NewService(manager, header)
-	if err := function.(func(ports.ServiceInterface, string, []string) error)(service, path, args); err != nil {
+	if err := function.(func(ports.LoggerInterface, ports.ServiceInterface, string, []string) error)(cm.logger, service, path, args); err != nil {
 		return err
 	}
 	return nil
 }
 
-func rename(service ports.ServiceInterface, path string, args []string) error {
-	err := service.FormatNames(path)
+func rename(log ports.LoggerInterface, service ports.ServiceInterface, path string, args []string) error {
+	logger, err := service.FormatNames(path)
 	if err != nil {
 		return err
+	}
+	for _, logLine := range logger {
+		log.Println(logLine)
+	}
+	return nil
+}
+
+func gaps(log ports.LoggerInterface, service ports.ServiceInterface, path string, args []string) error {
+	initDate, endDate, err := gapsExtraParam(args)
+	if err != nil {
+		return err
+	}
+	dates, err := service.GetGapGrouped(path, initDate, endDate)
+	if err != nil {
+		return err
+	}
+	for _, date := range dates {
+		log.Printf("%s", date)
+	}
+	return nil
+}
+
+func periods(log ports.LoggerInterface, service ports.ServiceInterface, path string, args []string) error {
+	dates, err := service.GetPeriodGrouped(path)
+	if err != nil {
+		return err
+	}
+	for _, date := range dates {
+		log.Printf("%s", date)
 	}
 	return nil
 }
@@ -89,32 +118,6 @@ func gapsExtraParam(args []string) (time.Time, time.Time, error) {
 		return zeroTime, zeroTime, err
 	}
 	return dInit, dFinal, nil
-}
-
-func gaps(service ports.ServiceInterface, path string, args []string) error {
-	initDate, endDate, err := gapsExtraParam(args)
-	if err != nil {
-		return err
-	}
-	dates, err := service.GetGapGrouped(path, initDate, endDate)
-	if err != nil {
-		return err
-	}
-	for _, date := range dates {
-		log.Printf("%s\n", date)
-	}
-	return nil
-}
-
-func periods(service ports.ServiceInterface, path string, args []string) error {
-	dates, err := service.GetPeriodGrouped(path)
-	if err != nil {
-		return err
-	}
-	for _, date := range dates {
-		log.Printf("%s\n", date)
-	}
-	return nil
 }
 
 func getCommand(args []string) (interface{}, error) {

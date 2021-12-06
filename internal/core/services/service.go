@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"sort"
 	"time"
 
@@ -30,44 +29,42 @@ func (s Service) GetHeaderData(path string, file fs.FileInfo) (ports.HeaderDataI
 		return nil, err
 	}
 	if err := s.header.Parse(date); err != nil {
-		return nil, fmt.Errorf("error parsing %s", file.Name())
+		return nil, fmt.Errorf("error parsing")
 	}
 	if !s.header.IsValid() {
-		return nil, fmt.Errorf("%s is not a valid file", file.Name())
+		return nil, fmt.Errorf("invalid file")
 	}
 	d := s.header.GetData()
 	return d, nil
 }
 
-func (s Service) FormatNames(path string) error {
-	log.Printf("Start to rename %s\n", path)
-
+func (s Service) FormatNames(path string) ([]string, error) {
+	logger := make([]string, 0)
 	files, err := s.fileManager.GetFiles(path)
 	if err != nil {
-		return err
+		return []string{}, err
 	}
 	for _, file := range files {
 		h, err := s.GetHeaderData(path, file)
 		if err != nil {
-			log.Printf("No: %s - %v", file.Name(), err)
+			logger = append(logger, fmt.Sprintf("No: %s - %v", file.Name(), err))
 			continue
 		}
 		act := "N"
 		if h.IsReprocessed() {
 			act = "R"
 		}
-		newFilename := fmt.Sprintf(nameFormat, h.GetAcquirer(), h.GetHeadquarter(), h.GetStatementId(),
+		newName := fmt.Sprintf(nameFormat, h.GetAcquirer(), h.GetHeadquarter(), h.GetStatementId(),
 			h.GetPeriodInit().Format(printDateFormat), h.GetPeriodEnd().Format(printDateFormat), act,
 			h.GetProcessingDate().Format(printDateFormat), h.GetLayoutVersion())
-		err = s.fileManager.RenameFile(path, file.Name(), newFilename)
+		err = s.fileManager.RenameFile(path, file.Name(), newName)
 		if err != nil {
-			log.Printf("No: %s - %v", file.Name(), err)
+			logger = append(logger, fmt.Sprintf("No: %s - %v", file.Name(), err))
 			continue
 		}
-		log.Printf("Yes: %s", file.Name())
+		logger = append(logger, fmt.Sprintf("Yes: %s - %s", file.Name(), newName))
 	}
-	log.Printf("Finish renaming %s\n", path)
-	return nil
+	return logger, nil
 }
 
 func (s Service) GetPeriodMap(path string) (map[time.Time]int, error) {
@@ -142,7 +139,7 @@ func (s Service) GetGrouped(dates []time.Time) []string {
 			pInit = date
 			pEnd = date
 		}
-		if date.After(pEnd.Add(48 * time.Hour)) {
+		if date.After(pEnd.Add(24 * time.Hour)) {
 			strRet := fmt.Sprintf("%s - %s", pInit.Format("02/01/2006"), pEnd.Format("02/01/2006"))
 			ret = append(ret, strRet)
 			pInit = date
