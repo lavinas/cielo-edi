@@ -6,11 +6,10 @@ import (
 	"time"
 )
 
-
 var (
 	redeCreditoMap = map[string]string{
-		"credito": "EEVC",
-		"financeiro":  "EEFI",
+		"credito":    "EEVC",
+		"financeiro": "EEFI",
 	}
 )
 

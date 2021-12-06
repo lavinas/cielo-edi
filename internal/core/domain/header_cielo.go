@@ -7,8 +7,8 @@ import (
 
 var (
 	cieloMap = map[string]int8{
-		"vendas": int8(3),
-		"financeiro": int8(4),
+		"vendas":       int8(3),
+		"financeiro":   int8(4),
 		"antecipacoes": int8(6),
 	}
 )
@@ -27,6 +27,7 @@ type HeaderCielo struct {
 	PostalBox      string    `txt:"20"`
 	LayoutVersion  int8      `txt:"3"`
 }
+
 func NewHeaderCielo() *HeaderCielo {
 	return &HeaderCielo{}
 }
@@ -68,7 +69,7 @@ func (d HeaderCielo) GetPeriodDates() ([]time.Time, error) {
 	return times, nil
 }
 func (d HeaderCielo) IsValid() bool {
-	if d.ProcessingDate.Equal(time.Time{}){
+	if d.ProcessingDate.Equal(time.Time{}) {
 		return false
 	}
 	if d.Acquirer != "CIELO" {

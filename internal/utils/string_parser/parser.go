@@ -39,7 +39,7 @@ var (
 )
 
 // StringParser has ability to Parse text strings into the fields of generic struct
-type StringParser struct{
+type StringParser struct {
 	parserType string
 }
 

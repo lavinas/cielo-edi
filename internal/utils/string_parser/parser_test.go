@@ -17,11 +17,11 @@ type Header struct {
 	Sequence        int       `txt:"7"`        // 35
 	Acquirer        string    `txt:"5"`        // 42
 	Filler2         string    `txt:"-"`
-	StatementOption int8      `txt:"2"`        // 47
-	Transmition     string    `txt:"1"`        // 49
-	PostalBox       string    `txt:"20"`       // 50
-	LayoutVersion   int8      `txt:"3"`        // 70
-	Filler          string    `txt:"177"`      // 73
+	StatementOption int8      `txt:"2"`   // 47
+	Transmition     string    `txt:"1"`   // 49
+	PostalBox       string    `txt:"20"`  // 50
+	LayoutVersion   int8      `txt:"3"`   // 70
+	Filler          string    `txt:"177"` // 73
 }
 
 type HeaderCSV struct {
@@ -37,16 +37,14 @@ type HeaderCSV struct {
 	LayoutVersion    string    `txt:"20"`
 }
 
-
 const (
-	headerline string = "910238632322021063020210630202106300008358CIELO04I                    014                                                                                                                                                                                 "
+	headerline    string = "910238632322021063020210630202106300008358CIELO04I                    014                                                                                                                                                                                 "
 	headerlineCsv string = "26,021644942,15052021,14052021,Movimentacao diaria - Cartoes de Debito,Redecard,NESPRESSO PJM             ,000297,DIARIO         ,V1.04 - 07/10 - EEVD"
 )
 
 func TestConst(t *testing.T) {
 	assert.Equal(t, "txt", tag_name)
 }
-
 
 func TestParseCSVOK(t *testing.T) {
 	sp := *NewStringParser("csv")

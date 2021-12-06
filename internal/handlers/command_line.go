@@ -8,42 +8,42 @@ import (
 	"time"
 
 	"github.com/lavinas/cielo-edi/internal/core/domain"
+	"github.com/lavinas/cielo-edi/internal/core/ports"
 	"github.com/lavinas/cielo-edi/internal/core/services"
 	"github.com/lavinas/cielo-edi/internal/utils/file_manager"
 	"github.com/lavinas/cielo-edi/internal/utils/string_parser"
-	"github.com/lavinas/cielo-edi/internal/core/ports"
 )
 
 var (
 	funcMap = map[string]interface{}{
-		"rename": rename,
-		"gaps":   gaps,
+		"rename":  rename,
+		"gaps":    gaps,
 		"periods": periods,
 	}
 	acquirerMap = map[string]ports.HeaderDataInterface{
-		"cielovendas": &domain.HeaderCielo{Statement: "vendas"},
-		"cielofinanceiro": &domain.HeaderCielo{Statement: "financeiro"},
+		"cielovendas":       &domain.HeaderCielo{Statement: "vendas"},
+		"cielofinanceiro":   &domain.HeaderCielo{Statement: "financeiro"},
 		"cieloantecipacoes": &domain.HeaderCielo{Statement: "antecipacoes"},
-		"redecredito": &domain.HeaderRedeCredito{Statement: "credito"},
-		"rededebito": &domain.HeaderRedeDebito{Statement: "debito"},
-		"redefinanceiro": &domain.HeaderRedeCredito{Statement: "financeiro"},
-		"getnet": &domain.HeaderGetnet{},
+		"redecredito":       &domain.HeaderRedeCredito{Statement: "credito"},
+		"rededebito":        &domain.HeaderRedeDebito{Statement: "debito"},
+		"redefinanceiro":    &domain.HeaderRedeCredito{Statement: "financeiro"},
+		"getnet":            &domain.HeaderGetnet{},
 	}
 	parserTypeMap = map[string]string{
-		"cielovendas": "position",
-		"cielofinanceiro": "position",
+		"cielovendas":       "position",
+		"cielofinanceiro":   "position",
 		"cieloantecipacoes": "position",
-		"redecredito": "position",
-		"rededebito": "csv",
-		"redefinanceiro": "position",
-		"getnet": "position",
+		"redecredito":       "position",
+		"rededebito":        "csv",
+		"redefinanceiro":    "position",
+		"getnet":            "position",
 	}
 )
 
 type CommandLine struct {
 }
 
-func NewCommandLine() *CommandLine{
+func NewCommandLine() *CommandLine {
 	return &CommandLine{}
 }
 
@@ -131,7 +131,7 @@ func getCommand(args []string) (interface{}, error) {
 	return funcMap[command], nil
 }
 
-func getAcquirer(args []string)(ports.HeaderDataInterface, error) {
+func getAcquirer(args []string) (ports.HeaderDataInterface, error) {
 	if len(args) < 3 {
 		return nil, fmt.Errorf("command not found (should be ./command-line command acquirer path")
 	}
@@ -145,8 +145,7 @@ func getAcquirer(args []string)(ports.HeaderDataInterface, error) {
 	return acquirerMap[acquirer], nil
 }
 
-
-func getParserType(args []string)(string, error) {
+func getParserType(args []string) (string, error) {
 	if len(args) < 3 {
 		return "", fmt.Errorf("command not found (should be ./command-line command acquirer path")
 	}
@@ -160,7 +159,7 @@ func getParserType(args []string)(string, error) {
 	return parserTypeMap[acquirer], nil
 }
 
-func getPath(args []string)(string, error) {
+func getPath(args []string) (string, error) {
 	if len(args) < 4 {
 		return "", fmt.Errorf("wrong number of parameters (should be ./command-line command acquirer path")
 	}
@@ -185,11 +184,11 @@ func getArgs(args []string) (interface{}, ports.HeaderDataInterface, string, str
 	command, err := getCommand(args)
 	if err != nil {
 		return nil, nil, "", "", err
-	} 
+	}
 	acquirer, err := getAcquirer(args)
 	if err != nil {
 		return nil, nil, "", "", err
-	} 
+	}
 	path, err := getPath(args)
 	if err != nil {
 		return nil, nil, "", "", err
@@ -200,4 +199,3 @@ func getArgs(args []string) (interface{}, ports.HeaderDataInterface, string, str
 	}
 	return command, acquirer, parseType, path, nil
 }
-

@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +15,6 @@ func TestRDGetStatementId(t *testing.T) {
 	id = header.GetStatementId()
 	assert.Equal(t, "EEVC", id)
 }
-
 
 func TestRDIsReprocessed(t *testing.T) {
 	header := HeaderRedeDebito{ProcessingType: "Diário"}
@@ -38,7 +36,6 @@ func TestRDGetPeriodDates(t *testing.T) {
 	assert.Len(t, dates, 1)
 	assert.Equal(t, dt, dates[0])
 }
-
 
 func TestRDIsValidRede(t *testing.T) {
 	pd, _ := time.Parse("2006-01-02", "2021-01-10")
@@ -72,9 +69,5 @@ func TestRDIsValidRede(t *testing.T) {
 	d = HeaderRedeDebito{ProcessingDate: pd, Acquirer: "rede", LayoutVersion: "V3.01 - 09/06 - EEVC", Statement: ""}
 	iv = d.IsValid()
 	assert.False(t, iv)
-
-
-
-
 
 }

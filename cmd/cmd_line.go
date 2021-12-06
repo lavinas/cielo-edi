@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/pkg/errors"
-	"os"
 	"log"
+	"os"
 
 	"github.com/lavinas/cielo-edi/internal/core/ports"
 	"github.com/lavinas/cielo-edi/internal/handlers"

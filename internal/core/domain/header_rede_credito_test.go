@@ -64,4 +64,3 @@ func TestIsValidRede(t *testing.T) {
 	iv = d.IsValid()
 	assert.False(t, iv)
 }
-

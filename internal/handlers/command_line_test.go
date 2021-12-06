@@ -10,7 +10,6 @@ var (
 	cm = NewCommandLine()
 )
 
-
 func TestExec(t *testing.T) {
 	args := []string{"program", "rename", "cielovendas", "/home/paulo/Desktop/nespresso/arquivos-x"}
 	err := cm.Run(args)
@@ -71,4 +70,3 @@ func TestExecRedDebito(t *testing.T) {
 	err := cm.Run(args)
 	assert.Nil(t, err)
 }
-

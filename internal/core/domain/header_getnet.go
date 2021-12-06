@@ -7,18 +7,19 @@ import (
 )
 
 type HeaderGetnet struct {
-	RegisterType         int8      `txt:"1"`
-	ProcessingDate       time.Time `txt:"ddmmyyyy"`
-	ProcessingHour       string    `txt:"6"`
-	PeriodDate           time.Time `txt:"ddmmyyyy"`
-	FileVersion          string    `txt:"8"`
-	Headquarter          string    `txt:"15"`
-	AcquirerCNPJ         string    `txt:"14"`
-	Acquirer             string    `txt:"20"`
-	Sequence             int       `txt:"9"`
-	AcquirerCode         string    `txt:"2"`
-	LayoutVersion        string    `txt:"25"` 
+	RegisterType   int8      `txt:"1"`
+	ProcessingDate time.Time `txt:"ddmmyyyy"`
+	ProcessingHour string    `txt:"6"`
+	PeriodDate     time.Time `txt:"ddmmyyyy"`
+	FileVersion    string    `txt:"8"`
+	Headquarter    string    `txt:"15"`
+	AcquirerCNPJ   string    `txt:"14"`
+	Acquirer       string    `txt:"20"`
+	Sequence       int       `txt:"9"`
+	AcquirerCode   string    `txt:"2"`
+	LayoutVersion  string    `txt:"25"`
 }
+
 func (d HeaderGetnet) GetHeadquarter() int64 {
 	n, _ := strconv.ParseInt(strings.TrimSpace(d.Headquarter), 10, 64)
 	return n
