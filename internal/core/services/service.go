@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	nameFormat      string = "CIELO-%010d-%02d-%s-%s-%s-%s-L%03d.txt"
+	nameFormat      string = "%s-%010d-%s-%s-%s-%s-%s-L%03d.txt"
 	printDateFormat string = "2006_01_02"
 )
 
@@ -47,17 +47,18 @@ func (s Service) FormatNames(path string) error {
 		return err
 	}
 	for _, file := range files {
-		header, err := s.GetHeaderData(path, file)
+		h, err := s.GetHeaderData(path, file)
 		if err != nil {
 			log.Printf("No: %s - %v", file.Name(), err)
 			continue
 		}
 		act := "N"
-		if header.IsReprocessed() {
+		if h.IsReprocessed() {
 			act = "R"
 		}
-		newFilename := fmt.Sprintf(nameFormat, header.GetHeadquarter(), header.GetStatementId(), header.GetPeriodInit().Format(printDateFormat),
-			header.GetPeriodEnd().Format(printDateFormat), act, header.GetProcessingDate().Format(printDateFormat), header.GetLayoutVersion())
+		newFilename := fmt.Sprintf(nameFormat, h.GetAcquirer(), h.GetHeadquarter(), h.GetStatementId(), 
+		h.GetPeriodInit().Format(printDateFormat), h.GetPeriodEnd().Format(printDateFormat), act, 
+		h.GetProcessingDate().Format(printDateFormat), h.GetLayoutVersion())
 		err = s.fileManager.RenameFile(path, file.Name(), newFilename)
 		if err != nil {
 			log.Printf("No: %s - %v", file.Name(), err)
@@ -104,11 +105,11 @@ func (s Service) GetPeriod(path string) ([]time.Time, error) {
 	for d := range dMap {
 		dates = append(dates, d)
 	}
-	sort.Slice(dates, func(i, j int) bool { return dates[i].After(dates[j]) })
+	sort.Slice(dates, func(i, j int) bool { return dates[i].Before(dates[j]) })
 	return dates, nil
 }
 
-func (s Service) GetPeriodGap(path string, initDate time.Time, endDate time.Time) ([]time.Time, error) {
+func (s Service) GetGap(path string, initDate time.Time, endDate time.Time) ([]time.Time, error) {
 	searchPeriod := make([]time.Time, 0)
 	if initDate.Equal(time.Time{}) || endDate.Equal(time.Time{}) {
 		return searchPeriod, fmt.Errorf("period is empty")
@@ -130,4 +131,45 @@ func (s Service) GetPeriodGap(path string, initDate time.Time, endDate time.Time
 		}
 	}
 	return gaps, nil
+}
+
+func (s Service) GetGrouped(dates []time.Time) ([]string) {
+	pInit := time.Time{}
+	pEnd  := time.Time{}
+	ret   := make([]string, 0)
+	for _, date := range dates {
+		if pInit.Equal(time.Time{}){
+			pInit = date
+			pEnd = date
+		}
+		if date.After(pEnd.Add(48 * time.Hour)) {
+			strRet := fmt.Sprintf("%s - %s", pInit.Format("02/01/2006"), pEnd.Format("02/01/2006"))
+			ret = append(ret, strRet)
+			pInit = date
+			pEnd = date
+		} else {
+			pEnd = date
+		}
+	}
+	if !pInit.Equal(time.Time{}){
+		strRet := fmt.Sprintf("%s - %s", pInit.Format("02/01/2006"), pEnd.Format("02/01/2006"))
+		ret = append(ret, strRet)
+	}
+	return ret
+}
+
+func (s Service) GetGapGrouped(path string, initDate time.Time, endDate time.Time) ([]string, error) {
+	dates, err := s.GetGap(path, initDate, endDate)
+	if err != nil {
+		return []string{}, err
+	}
+	return s.GetGrouped(dates), nil
+}
+
+func (s Service) GetPeriodGrouped(path string) ([]string, error) {
+	dates, err := s.GetPeriod(path)
+	if err != nil {
+		return []string{}, err
+	}
+	return s.GetGrouped(dates), nil
 }

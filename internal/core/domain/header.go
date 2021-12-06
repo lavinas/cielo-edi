@@ -9,8 +9,7 @@ type Header struct {
 	parser ports.StringParserInterface
 }
 
-func NewHeader(parser ports.StringParserInterface) *Header {
-	data := &HeaderData{}
+func NewHeader(data ports.HeaderDataInterface, parser ports.StringParserInterface) *Header {
 	return &Header{data: data, parser: parser}
 }
 
@@ -27,5 +26,5 @@ func (h Header) GetData() ports.HeaderDataInterface {
 }
 
 func (h Header) IsLoaded() bool {
-	return h.data.GetAcquirer() == "CIELO"
+	return h.data.IsLoaded()
 }

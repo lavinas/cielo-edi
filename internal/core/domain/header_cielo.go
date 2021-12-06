@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type HeaderData struct {
+type HeaderCielo struct {
 	RegisterType   int8      `txt:"1"`
 	Headquarter    int64     `txt:"10"`
 	ProcessingDate time.Time `txt:"yyyymmdd"`
@@ -18,56 +18,34 @@ type HeaderData struct {
 	PostalBox      string    `txt:"20"`
 	LayoutVersion  int8      `txt:"3"`
 }
-
-func (d HeaderData) GetRegisterType() int8 {
-	return d.RegisterType
+func NewHeaderCielo() *HeaderCielo {
+	return &HeaderCielo{}
 }
-
-func (d HeaderData) GetHeadquarter() int64 {
+func (d HeaderCielo) GetHeadquarter() int64 {
 	return d.Headquarter
 }
-
-func (d HeaderData) GetProcessingDate() time.Time {
+func (d HeaderCielo) GetProcessingDate() time.Time {
 	return d.ProcessingDate
 }
-
-func (d HeaderData) GetPeriodInit() time.Time {
+func (d HeaderCielo) GetPeriodInit() time.Time {
 	return d.PeriodInit
 }
-
-func (d HeaderData) GetPeriodEnd() time.Time {
+func (d HeaderCielo) GetPeriodEnd() time.Time {
 	return d.PeriodEnd
 }
-
-func (d HeaderData) GetSequence() int {
-	return d.Sequence
+func (d HeaderCielo) GetStatementId() string {
+	return fmt.Sprintf("%02d", d.StatementId)
 }
-
-func (d HeaderData) GetAcquirer() string {
-	return d.Acquirer
-}
-
-func (d HeaderData) GetStatementId() int8 {
-	return d.StatementId
-}
-
-func (d HeaderData) GetTransmission() string {
-	return d.Transmission
-}
-
-func (d HeaderData) GetPostalBox() string {
-	return d.PostalBox
-}
-
-func (d HeaderData) GetLayoutVersion() int8 {
+func (d HeaderCielo) GetLayoutVersion() int8 {
 	return d.LayoutVersion
 }
-
-func (d HeaderData) IsReprocessed() bool {
+func (d HeaderCielo) GetAcquirer() string {
+	return d.Acquirer
+}
+func (d HeaderCielo) IsReprocessed() bool {
 	return d.Sequence == 9999999
 }
-
-func (d HeaderData) GetPeriodDates() ([]time.Time, error) {
+func (d HeaderCielo) GetPeriodDates() ([]time.Time, error) {
 	times := make([]time.Time, 0)
 	if d.PeriodInit.Equal(time.Time{}) || d.PeriodEnd.Equal(time.Time{}) {
 		return times, fmt.Errorf("period is empty")
@@ -79,4 +57,7 @@ func (d HeaderData) GetPeriodDates() ([]time.Time, error) {
 		times = append(times, t)
 	}
 	return times, nil
+}
+func (d HeaderCielo) IsLoaded() bool {
+	return d.ProcessingDate != time.Time{} && d.Acquirer == "CIELO" && d.LayoutVersion != 0
 }

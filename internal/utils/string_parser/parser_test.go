@@ -22,20 +22,45 @@ type Header struct {
 	Filler          string    `txt:"177"`      // 73
 }
 
+type HeaderCSV struct {
+	RegisterType     int8      `txt:"2"`
+	HeadquarterId    int64     `txt:"9"`
+	ProcDate         time.Time `txt:"ddmmyyyy"`
+	PeriodDate       time.Time `txt:"ddmmyyyy"`
+	StatementDesc    string    `txt:"39"`
+	Acquirer         string    `txt:"8"`
+	HeadQquarterName string    `txt:"26"`
+	Sequence         int       `txt:"6"`
+	ProcessingType   string    `txt:"15"`
+	LayoutVersion    string    `txt:"20"`
+}
+
+
 const (
 	headerline string = "910238632322021063020210630202106300008358CIELO04I                    014                                                                                                                                                                                 "
-)
-
-var (
-	header Header = Header{}
-	sp     StringParser
+	headerlineCsv string = "26,021644942,15052021,14052021,Movimentacao diaria - Cartoes de Debito,Redecard,NESPRESSO PJM             ,000297,DIARIO         ,V1.04 - 07/10 - EEVD"
 )
 
 func TestConst(t *testing.T) {
 	assert.Equal(t, "txt", tag_name)
 }
 
+
+func TestParseCSVOK(t *testing.T) {
+	sp := *NewStringParser("csv")
+	header := HeaderCSV{}
+	err := sp.Parse(&header, headerlineCsv)
+	assert.Nil(t, err)
+	assert.Equal(t, int8(26), header.RegisterType)
+	assert.Equal(t, int64(21644942), header.HeadquarterId)
+	dat, _ := time.Parse("2006-01-02", "2021-05-15")
+	assert.Equal(t, dat, header.ProcDate)
+	assert.Equal(t, "V1.04 - 07/10 - EEVD", header.LayoutVersion)
+}
+
 func TestParseFieldOk(t *testing.T) {
+	header := Header{}
+	sp := *NewStringParser("position")
 	var pos int
 	var err error
 	// testing int8
@@ -71,7 +96,30 @@ func TestParseFieldOk(t *testing.T) {
 	assert.Equal(t, 19, pos)
 }
 
+func TestParseFieldCSVOk(t *testing.T) {
+	header := HeaderCSV{}
+	sp := *NewStringParser("csv")
+	var pos int
+	var err error
+	// testing int8
+	pos, err = sp.ParseField(&header, "RegisterType", headerlineCsv, 0)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, pos)
+	assert.Equal(t, int8(26), header.RegisterType)
+	pos, err = sp.ParseField(&header, "HeadquarterId", headerlineCsv, 1)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, pos)
+	assert.Equal(t, int64(21644942), header.HeadquarterId)
+	pos, err = sp.ParseField(&header, "ProcDate", headerlineCsv, 2)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, pos)
+	dat, _ := time.Parse("20060102", "20210515")
+	assert.Equal(t, dat, header.ProcDate)
+}
+
 func TestParseFieldDataErrors(t *testing.T) {
+	header := Header{}
+	sp := *NewStringParser("position")
 	var pos int
 	var err error
 	// field name error
@@ -116,6 +164,7 @@ func TestParseAllStruct1(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "RegisterType", headerline, 0)
 	assert.NotNil(t, err)
@@ -138,6 +187,7 @@ func TestParseAllStruct2(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "RegisterType", headerline, 0)
 	assert.NotNil(t, err)
@@ -146,6 +196,7 @@ func TestParseAllStruct2(t *testing.T) {
 }
 
 func TestInterfaceInvalidStruct(t *testing.T) {
+	sp := *NewStringParser("position")
 	var errorInterface int
 	pos, err := sp.ParseField(&errorInterface, "RegisterType", headerline, 100)
 	assert.NotNil(t, err)
@@ -172,6 +223,7 @@ func TestParseIntStruct1(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "RegisterType", headerline, 0)
 	assert.NotNil(t, err)
@@ -194,6 +246,7 @@ func TestParseIntStruct2(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "RegisterType", headerline, 0)
 	assert.NotNil(t, err)
@@ -216,6 +269,7 @@ func TestParseTimeStruct2(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "ProcDate", headerline, 11)
 	assert.NotNil(t, err)
@@ -238,6 +292,7 @@ func TestParseStringStruct3(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`          // 70
 		Filler          string    `txt:"177"`        // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "ProcDate", "910238632322021-06-3020210630202106300008358CIELO04I                    014", 11)
 	assert.Nil(t, err)
@@ -260,6 +315,7 @@ func TestParseStringStruct1(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "Acquirer", headerline, 42)
 	assert.NotNil(t, err)
@@ -282,6 +338,7 @@ func TestParseStringStruct2(t *testing.T) {
 		LayoutVersion   int8      `txt:"3"`        // 70
 		Filler          string    `txt:"177"`      // 73
 	}
+	sp := *NewStringParser("position")
 	h := Header{}
 	pos, err := sp.ParseField(&h, "Acquirer", headerline, 42)
 	assert.NotNil(t, err)
@@ -290,6 +347,7 @@ func TestParseStringStruct2(t *testing.T) {
 }
 
 func TestParseOk(t *testing.T) {
+	sp := *NewStringParser("position")
 	header := Header{}
 	err := sp.Parse(&header, headerline)
 	assert.Nil(t, err)
@@ -322,6 +380,7 @@ func TestParseOkWithoutFinal(t *testing.T) {
 		PostalBox       string    `txt:"20"`       // 50
 		LayoutVersion   int8      `txt:"3"`        // 70
 	}
+	sp := *NewStringParser("position")
 	header := Header{}
 	err := sp.Parse(&header, headerline)
 	assert.Nil(t, err)
@@ -352,6 +411,7 @@ func TestParseErrorShortString(t *testing.T) {
 		PostalBox       string    `txt:"20"`       // 50
 		LayoutVersion   int8      `txt:"3"`        // 70
 	}
+	sp := *NewStringParser("position")
 	header := Header{}
 	err := sp.Parse(&header, "910238632322021063020210630202106300008358CIELO04I                    ")
 	assert.NotNil(t, err)
@@ -372,8 +432,13 @@ func TestParseErrorInProcDate(t *testing.T) {
 		PostalBox       string    `txt:"20"`       // 50
 		LayoutVersion   int8      `txt:"3"`        // 70
 	}
+	sp := *NewStringParser("position")
 	header := Header{}
 	err := sp.Parse(&header, "910238632322021063020210630202106300008358CIELO04I                    ")
 	assert.NotNil(t, err)
 	assert.Equal(t, "ProcDate: invalid datetime tag value (should be for ex yyyymmdd)", err.Error())
+}
+
+func TestParseOkCsv(t *testing.T) {
+
 }

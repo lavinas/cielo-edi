@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,8 @@ var (
 		"yyyy-mm-dd": "2006-01-02",
 		"yymmdd":     "060102",
 		"yy-mm-dd":   "06-01-02",
+		"ddmmyyyy":   "02012006",
+		"dd-mm-yyyy": "02-01-2006",
 	}
 	// time_type maps struct fields that this program can support for parsing txt
 	// others types should be implemented here
@@ -36,7 +39,9 @@ var (
 )
 
 // StringParser has ability to Parse text strings into the fields of generic struct
-type StringParser struct{}
+type StringParser struct{
+	parserType string
+}
 
 // UnmarshalField try to find a structure field and parse the value of a string based on the parameters of this field
 //
@@ -61,21 +66,21 @@ func (s StringParser) ParseField(source interface{}, fieldName string, txt strin
 	switch fieldIndex {
 	case "d":
 		var dval int64
-		dval, fieldLen, err = getDecimal(fieldType, fieldIndex, fieldTag, txt, txtPos)
+		dval, fieldLen, err = getDecimal(fieldType, fieldIndex, fieldTag, s.parserType, txt, txtPos)
 		if err != nil {
 			return txtPos, err
 		}
 		reflect.ValueOf(source).Elem().FieldByName(fieldName).SetInt(dval)
 	case "s":
 		var sVal string
-		sVal, fieldLen, err = getString(fieldIndex, fieldTag, txt, txtPos)
+		sVal, fieldLen, err = getString(fieldIndex, fieldTag, s.parserType, txt, txtPos)
 		if err != nil {
 			return txtPos, err
 		}
 		reflect.ValueOf(source).Elem().FieldByName(fieldName).SetString(sVal)
 	case "t":
 		var tVal time.Time
-		tVal, fieldLen, err = getTime(fieldIndex, fieldTag, txt, txtPos)
+		tVal, fieldLen, err = getTime(fieldIndex, fieldTag, s.parserType, txt, txtPos)
 		if err != nil {
 			return txtPos, err
 		}
@@ -115,8 +120,8 @@ func (s StringParser) Parse(source interface{}, txt string) error {
 	return nil
 }
 
-func NewStringParser() *StringParser {
-	return &StringParser{}
+func NewStringParser(parserType string) *StringParser {
+	return &StringParser{parserType: strings.ToLower(parserType)}
 }
 
 // getValue parse string and returns substring and its length based on field parameters (Index(type) and tag)
@@ -127,21 +132,37 @@ func NewStringParser() *StringParser {
 // txtPos has the position of txt to start to parse
 //
 // returns a substring parsed, the len of this string and a possible error
-func getValue(fieldIndex string, tagValue string, txt string, txtPos int) (string, int, error) {
-	var fieldLen int
-	var err error
-	if fieldIndex == "t" {
-		fieldLen = len(tagValue)
-	} else {
-		fieldLen, err = strconv.Atoi(tagValue)
-		if err != nil {
-			return "", txtPos, fmt.Errorf("invalid tag value (should be numeric)")
+func getValue(fieldIndex string, tagValue string, ptype string, txt string, txtPos int) (string, int, error) {
+	var value string
+	var addPos int
+	switch ptype {
+	case "position":
+		var fieldLen int
+		var err error
+		if fieldIndex == "t" {
+			fieldLen = len(tagValue)
+		} else {
+			fieldLen, err = strconv.Atoi(tagValue)
+			if err != nil {
+				return "", txtPos, fmt.Errorf("invalid tag value (should be numeric)")
+			}
 		}
+		if txtPos+fieldLen > len(txt) {
+			return "", txtPos, fmt.Errorf("unexpected end of txt for parsing this field")
+		}
+		value = txt[txtPos : txtPos+fieldLen]
+		addPos = fieldLen
+	case "csv":
+		txtSplit := strings.Split(txt, ",")
+		if txtPos >= len(txtSplit) {
+			return "", txtPos, fmt.Errorf("unexpected end of csv for parsing this field")
+		}
+		value = txtSplit[txtPos]
+		addPos = 1
+	default:
+		return "", txtPos, fmt.Errorf("unexpected type of parser")
 	}
-	if txtPos+fieldLen > len(txt) {
-		return "", txtPos, fmt.Errorf("unexpected end of txt for parsing this field")
-	}
-	return txt[txtPos : txtPos+fieldLen], fieldLen, nil
+	return value, addPos, nil
 }
 
 // getDecimal parse string and returns a integer value and its length based on field parameters (Index(type) and tag)
@@ -152,10 +173,10 @@ func getValue(fieldIndex string, tagValue string, txt string, txtPos int) (strin
 // txtPos has the position of txt to start to parse
 //
 // returns a substring parsed transformed in a integer (8, 16, 32 or 64), the len of this string and a possible error
-func getDecimal(fieldType string, fieldIndex string, tagValue string, txt string, txtPos int) (int64, int, error) {
+func getDecimal(fieldType string, fieldIndex string, tagValue string, ptype string, txt string, txtPos int) (int64, int, error) {
 	var dimN int = 32
 	var err error
-	value, txtPos, err := getValue(fieldIndex, tagValue, txt, txtPos)
+	value, txtPos, err := getValue(fieldIndex, tagValue, ptype, txt, txtPos)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -178,8 +199,8 @@ func getDecimal(fieldType string, fieldIndex string, tagValue string, txt string
 // txtPos has the position of txt to start to parse
 //
 // returns a substring parsed, the len of this string and a possible error
-func getString(fieldIndex string, tagValue string, txt string, txtPos int) (string, int, error) {
-	value, txtPos, err := getValue(fieldIndex, tagValue, txt, txtPos)
+func getString(fieldIndex string, tagValue string, ptype string, txt string, txtPos int) (string, int, error) {
+	value, txtPos, err := getValue(fieldIndex, tagValue, ptype, txt, txtPos)
 	if err != nil {
 		return "", 0, err
 	}
@@ -194,8 +215,8 @@ func getString(fieldIndex string, tagValue string, txt string, txtPos int) (stri
 // txtPos has the position of txt to start to parse
 //
 // returns a substring parsed transformed in a Time variable, the len of this string and a possible error
-func getTime(fieldIndex string, tagValue string, txt string, txtPos int) (time.Time, int, error) {
-	value, txtPos, err := getValue(fieldIndex, tagValue, txt, txtPos)
+func getTime(fieldIndex string, tagValue string, ptype string, txt string, txtPos int) (time.Time, int, error) {
+	value, txtPos, err := getValue(fieldIndex, tagValue, ptype, txt, txtPos)
 	if err != nil {
 		return time.Time{}, 0, err
 	}

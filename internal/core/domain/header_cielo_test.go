@@ -10,7 +10,7 @@ import (
 func TestGetGapsOk(t *testing.T) {
 	init, _ := time.Parse("2006-01-02", "2021-01-01")
 	end, _ := time.Parse("2006-01-02", "2021-01-10")
-	d := HeaderData{PeriodInit: init, PeriodEnd: end}
+	d := HeaderCielo{PeriodInit: init, PeriodEnd: end}
 	dates, err := d.GetPeriodDates()
 	assert.Nil(t, err)
 	assert.Len(t, dates, 10)
@@ -25,7 +25,7 @@ func TestGetGapsOk(t *testing.T) {
 }
 
 func TestGetGapsEmptyPeriod(t *testing.T) {
-	d := HeaderData{}
+	d := HeaderCielo{}
 	dates, err := d.GetPeriodDates()
 	assert.NotNil(t, err)
 	assert.Equal(t, "period is empty", err.Error())
@@ -35,7 +35,7 @@ func TestGetGapsEmptyPeriod(t *testing.T) {
 func TestGetGapsWrongPeriod(t *testing.T) {
 	init, _ := time.Parse("2006-01-02", "2021-01-10")
 	end, _ := time.Parse("2006-01-02", "2021-01-01")
-	d := HeaderData{PeriodInit: init, PeriodEnd: end}
+	d := HeaderCielo{PeriodInit: init, PeriodEnd: end}
 	dates, err := d.GetPeriodDates()
 	assert.NotNil(t, err)
 	assert.Equal(t, "initial period after final period", err.Error())

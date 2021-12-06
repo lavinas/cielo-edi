@@ -26,10 +26,16 @@ type HeaderDataInterface interface {
 	GetProcessingDate() time.Time
 	GetPeriodInit() time.Time
 	GetPeriodEnd() time.Time
-	GetSequence() int
-	GetStatementId() int8
+	GetStatementId() string
 	GetLayoutVersion() int8
 	GetAcquirer() string
 	IsReprocessed() bool
 	GetPeriodDates() ([]time.Time, error)
+	IsLoaded() bool
+}
+
+type ServiceInterface interface {
+	FormatNames(string) error
+	GetGapGrouped(string, time.Time, time.Time) ([]string, error)
+	GetPeriodGrouped(string) ([]string, error)
 }
