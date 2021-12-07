@@ -4,6 +4,7 @@ import (
 	"log"
 )
 
+
 type Logger struct {
 }
 
