@@ -11,6 +11,7 @@ var (
 		"vendas":       int8(3),
 		"financeiro":   int8(4),
 		"antecipacoes": int8(6),
+		"alelo": int8(10),
 	}
 )
 

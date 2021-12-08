@@ -38,6 +38,7 @@ const (
 	redefin     = "03029092021RedecardExtrato de Movimentacao FinanceiraNESPRESSO PJM         000434021644942DIARIO         V3.01 - 09/06 - EEFI"
 	rededebt    = "00,021644942,22092021,21092021,Movimentacao diaria - Cartoes de Debito,Redecard,NESPRESSO PJM             ,000427,DIARIO         ,V1.04 - 07/10 - EEVD"
 	getnet      = "02307202106154023072021CEADM1001447355        10440482000154GETNET S.A.         000002146GS                         "
+	cieloalelo  = "011013496782020123120201231202012310008177CIELO10I                    013"
 )
 
 //------------------------------------------------------------------------------------------
@@ -319,5 +320,55 @@ func TestRenameGetnet(t *testing.T) {
 	assert.Len(t, result, 2)
 	assert.Equal(t, "Yes: test1.txt - GETNET-0001447355-GETNET-2021_07_23-2021_07_23-N-2021_07_23-L000.txt", result[0])
 	assert.Equal(t, "No: test2.txt - error parsing", result[1])
+	endPath(path)
+}
+
+func TestPeriodsCieloAlelo(t *testing.T) {
+	logx := NewLoggerMock()
+	cm := NewCommandLine(logx)
+	path := "./f1"
+	initPath(path)
+	createFile(path, "test1.txt", cieloalelo)
+	args := []string{"pm", "periods", "cieloalelo", path}
+	err := cm.Run(args)
+	assert.Nil(t, err)
+	result := logx.GetLines()
+	assert.Len(t, result, 1)
+	assert.Equal(t, "31/12/2020 - 31/12/2020", result[0])
+	endPath(path)
+}
+
+func TestGapsCieloAlelo(t *testing.T) {
+	logx := NewLoggerMock()
+	cm := NewCommandLine(logx)
+	path := "./f2"
+	initPath(path)
+	createFile(path, "test1.txt", cieloalelo)
+	args := []string{"pm", "gaps", "cieloalelo", path, "01/12/2020", "30/03/2021"}
+	err := cm.Run(args)
+	assert.Nil(t, err)
+	result := logx.GetLines()
+	assert.Len(t, result, 2)
+	assert.Equal(t, "01/12/2020 - 30/12/2020", result[0])
+	assert.Equal(t, "01/01/2021 - 30/03/2021", result[1])
+	endPath(path)
+}
+
+func TestRenameCieloAlelo(t *testing.T) {
+	logx := NewLoggerMock()
+	cm := NewCommandLine(logx)
+	path := "./f3"
+	initPath(path)
+	fn := createFile(path, "test1.txt", cieloalelo)
+	assert.True(t, fileExists(fn))
+	fn = createFile(path, "test2.txt", cielofinanc)
+	assert.True(t, fileExists(fn))
+	args := []string{"pm", "rename", "cieloalelo", path}
+	err := cm.Run(args)
+	assert.Nil(t, err)
+	result := logx.GetLines()
+	assert.Len(t, result, 2)
+	assert.Equal(t, "Yes: test1.txt - CIELO-1101349678-10-2020_12_31-2020_12_31-N-2020_12_31-L013.txt", result[0])
+	assert.Equal(t, "No: test2.txt - invalid file", result[1])
 	endPath(path)
 }

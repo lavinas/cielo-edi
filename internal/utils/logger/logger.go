@@ -17,5 +17,5 @@ func (l Logger) Printf(format string, v ...interface{}) {
 }
 
 func (l Logger) Println(v ...interface{}) {
-	log.Panicln(v...)
+	log.Println(v...)
 }
